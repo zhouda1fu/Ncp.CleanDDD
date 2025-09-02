@@ -4,8 +4,8 @@
     <el-aside :width="sidebarWidth" class="sidebar" :class="{ 'sidebar-collapsed': isCollapsed }">
       <div class="logo">
         <div class="logo-icon">
-          <!-- <el-icon size="24"><Monitor /></el-icon> -->
-          <img src="@/assets/images/logo.png" alt="Logo" class="logo-image" />
+          <el-icon size="24"><Monitor /></el-icon>
+          <!-- <img src="@/assets/images/logo.png" alt="Logo" class="logo-image" /> -->
         </div>
         <!-- <h2 v-show="!isCollapsed">MindfulVRManager</h2> -->
       </div>
@@ -259,7 +259,7 @@ onUnmounted(() => {
 
 .logo-image {
   width: 100%;
-  height: 100%;
+  height: 80%;
   object-fit: contain;
   border-radius: 12px;
 }
