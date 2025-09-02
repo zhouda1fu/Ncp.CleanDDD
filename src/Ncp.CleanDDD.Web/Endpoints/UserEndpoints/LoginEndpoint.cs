@@ -6,8 +6,17 @@ using NetCorePal.Extensions.Jwt;
 
 namespace Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 
+/// <summary>
+/// µÇÂ¼
+/// </summary>
+/// <param name="Username">ÓÃ»§Ãû</param>
+/// <param name="Password">ÃÜÂë</param>
 public record LoginRequest(string Username, string Password);
 
+/// <summary>
+/// µÇÂ¼
+/// </summary>
+/// <param name="jwtProvider"></param>
 [Tags("Users")]
 [HttpPost("/api/user/login")]
 [AllowAnonymous]

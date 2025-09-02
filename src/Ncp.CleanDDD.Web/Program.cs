@@ -1,23 +1,25 @@
-using NetCorePal.Extensions.Primitives;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Prometheus;
-using System.Reflection;
-using System.Text.Json;
-using Microsoft.AspNetCore.DataProtection;
-using StackExchange.Redis;
-using FluentValidation.AspNetCore;
-using FluentValidation;
-using Ncp.CleanDDD.Web.Extensions;
 using FastEndpoints;
-using Serilog;
-using Serilog.Formatting.Json;
+using FastEndpoints.Swagger;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
+using IGeekFan.AspNetCore.Knife4jUI;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Ncp.CleanDDD.Web.Extensions;
+using NetCorePal.Extensions.Primitives;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Prometheus;
 using Refit;
+using Serilog;
+using Serilog.Formatting.Json;
+using StackExchange.Redis;
+using System.Reflection;
+using System.Text.Json;
 
 Log.Logger = new LoggerConfiguration()
     .Enrich.WithClientIp()
@@ -78,6 +80,27 @@ try
     #region FastEndpoints
 
     builder.Services.AddFastEndpoints();
+
+
+    builder.Services.SwaggerDocument(settings =>
+    {
+        settings.DocumentSettings = s =>
+        {
+            s.Title = "Ncp.CleanDDDAPI接口文档";
+            s.Version = "v1";
+            s.Description = "Ncp.CleanDDDAPI接口文档";
+
+            s.UseControllerSummaryAsTagDescription = true;
+        };
+
+        // 过滤端点 - 只显示指定标签的端点
+        //settings.EndpointFilter = ep => ep.EndpointTags?.Any(tag =>
+        //    new[] { "Users","test" }.Contains(tag)) is true;
+
+        // 启用授权支持
+        settings.EnableJWTBearerAuth = true;
+    });
+
     builder.Services.Configure<JsonOptions>(o =>
         o.SerializerOptions.AddNetCorePalJsonConverters());
 
@@ -196,19 +219,29 @@ try
 
     app.UseKnownExceptionHandler();
     // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
+    //if (app.Environment.IsDevelopment())
+    //{
+    //    app.UseSwagger();
+    //    app.UseSwaggerUI();
+    //}
 
     app.UseStaticFiles();
     app.UseHttpsRedirection();
     app.UseRouting();
     app.UseAuthorization();
 
-    app.MapControllers();
-    app.UseFastEndpoints();
+    #region Knife4UI
+
+    app.UseKnife4UI(c =>
+    {
+        c.RoutePrefix = "swagger";
+        c.SwaggerEndpoint("/v1/swagger.json", "v1");
+    });
+    //app.MapControllers();
+    app.UseFastEndpoints().UseSwaggerGen();
+    #endregion
+
+
 
     #region SignalR
 
