@@ -1,4 +1,7 @@
 ﻿using MediatR;
+using Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate;
+using Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate;
+using Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate;
 
 namespace Ncp.CleanDDD.Infrastructure;
 
@@ -23,5 +26,11 @@ public partial class ApplicationDbContext(DbContextOptions<ApplicationDbContext>
         base.ConfigureConventions(configurationBuilder);
     }
 
-   
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<OrganizationUnit> OrganizationUnits => Set<OrganizationUnit>();
+    public DbSet<UserOrganizationUnit> UserOrganizationUnits => Set<UserOrganizationUnit>();
+
 }

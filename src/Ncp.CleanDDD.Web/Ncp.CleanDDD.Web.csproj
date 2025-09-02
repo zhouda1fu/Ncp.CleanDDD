@@ -41,6 +41,7 @@
     <PackageReference Include="NetCorePal.Extensions.MicrosoftServiceDiscovery" Version="$(NetCorePalVersion)" />
     <PackageReference Include="NetCorePal.Extensions.Primitives" Version="$(NetCorePalVersion)" />
     <PackageReference Include="NetCorePal.Extensions.Jwt.StackExchangeRedis" Version="$(NetCorePalVersion)" />
+    <PackageReference Include="NPOI" Version="2.7.4" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql.Json.Microsoft" Version="9.0.0" />
     <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
@@ -66,11 +67,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\Commands\" />
     <Folder Include="Application\DomainEventHandlers\" />
     <Folder Include="Application\IntegrationEventConverters\" />
     <Folder Include="Application\IntegrationEventHandlers\" />
-    <Folder Include="Application\Queries\" />
     <Folder Include="Clients\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Extensions;
 using NetCorePal.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -127,7 +128,9 @@ try
     #endregion
 
     #region Query
-
+    builder.Services.AddScoped<UserQuery>();
+    builder.Services.AddScoped<RoleQuery>();
+    builder.Services.AddScoped<OrganizationUnitQuery>();
 
     #endregion
 
