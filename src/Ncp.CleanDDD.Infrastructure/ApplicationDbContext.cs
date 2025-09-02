@@ -1,7 +1,4 @@
-﻿using Ncp.CleanDDD.Domain.AggregatesModel.OrderAggregate;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Ncp.CleanDDD.Domain.AggregatesModel.DeliverAggregate;
+﻿using MediatR;
 
 namespace Ncp.CleanDDD.Infrastructure;
 
@@ -26,6 +23,5 @@ public partial class ApplicationDbContext(DbContextOptions<ApplicationDbContext>
         base.ConfigureConventions(configurationBuilder);
     }
 
-    public DbSet<Order> Orders => Set<Order>();
-    public DbSet<DeliverRecord> DeliverRecords => Set<DeliverRecord>();
+   
 }

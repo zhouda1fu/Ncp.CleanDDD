@@ -65,6 +65,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Application\Commands\" />
+    <Folder Include="Application\DomainEventHandlers\" />
+    <Folder Include="Application\IntegrationEventConverters\" />
+    <Folder Include="Application\IntegrationEventHandlers\" />
+    <Folder Include="Application\Queries\" />
+    <Folder Include="Clients\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

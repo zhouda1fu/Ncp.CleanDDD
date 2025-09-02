@@ -1,7 +1,6 @@
 ﻿global using NetCorePal.Extensions.AspNetCore;
 global using NetCorePal.Extensions.DependencyInjection;
 global using Microsoft.Extensions.DependencyInjection;
-global using Ncp.CleanDDD.Domain;
 global using Ncp.CleanDDD.Infrastructure;
 global using FluentValidation;
 global using NetCorePal.Extensions.Primitives;
