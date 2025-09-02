@@ -41,44 +41,6 @@ namespace Ncp.CleanDDD.Web.AppPermissions
             organizationUnitManagement.AddChild(PermissionCodes.OrganizationUnitView, "查看组织架构");
             organizationUnitManagement.AddChild(PermissionCodes.OrganizationUnitAssign, "分配组织架构");
 
-            // 设备状态管理权限
-            var deviceManagement = systemAccess.AddPermission(PermissionCodes.DeviceManagement, "设备状态管理");
-            deviceManagement.AddChild(PermissionCodes.DeviceCreate, "创建设备");
-            deviceManagement.AddChild(PermissionCodes.DeviceEdit, "编辑设备");
-            deviceManagement.AddChild(PermissionCodes.DeviceDelete, "删除设备");
-            deviceManagement.AddChild(PermissionCodes.DeviceView, "查看设备");
-
-            // 团体任务管理权限
-            var groupTaskManagement = systemAccess.AddPermission(PermissionCodes.GroupTaskManagement, "团体任务管理");
-            groupTaskManagement.AddChild(PermissionCodes.GroupTaskCreate, "创建团体任务");
-            groupTaskManagement.AddChild(PermissionCodes.GroupTaskEdit, "编辑团体任务");
-            groupTaskManagement.AddChild(PermissionCodes.GroupTaskDelete, "删除团体任务");
-            groupTaskManagement.AddChild(PermissionCodes.GroupTaskView, "查看团体任务");
-
-
-
-
-
-            //// 在线团体任务管理权限
-            //var GroupTaskListManagement = systemAccess.AddPermission(PermissionCodes.GroupTaskListManagement, "在线团体任务管理");
-            //GroupTaskListManagement.AddChild(PermissionCodes.GroupTaskListCreate, "创建在线团体任务");
-            //GroupTaskListManagement.AddChild(PermissionCodes.GroupTaskListEdit, "编辑在线团体任务");
-            //GroupTaskListManagement.AddChild(PermissionCodes.GroupTaskListDelete, "删除在线团体任务");
-            //GroupTaskListManagement.AddChild(PermissionCodes.GroupTaskListView, "查看在线团体任务");
-
-
-            // 在线团体任务管理权限
-            var CourseManagement = systemAccess.AddPermission(PermissionCodes.CourseManagement, "任务课程管理");
-            CourseManagement.AddChild(PermissionCodes.CourseCreate, "创建任务课程");
-            CourseManagement.AddChild(PermissionCodes.CourseEdit, "编辑任务课程");
-            CourseManagement.AddChild(PermissionCodes.CourseDelete, "删除任务课程");
-            CourseManagement.AddChild(PermissionCodes.CourseView, "查看任务课程");
-
-            // 用户训练档案管理权限
-            var userTrainingArchiveManagement = systemAccess.AddPermission(PermissionCodes.UserTrainingArchiveManagement, "用户训练档案管理");
-            userTrainingArchiveManagement.AddChild(PermissionCodes.UserTrainingArchiveView, "查看用户训练档案");
-            userTrainingArchiveManagement.AddChild(PermissionCodes.UserTrainingArchiveDelete, "删除训练记录");
-
             // 所有接口访问权限
             var allApiAccess = systemAccess.AddPermission(PermissionCodes.AllApiAccess, "所有接口访问权限");
         }

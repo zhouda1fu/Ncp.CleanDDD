@@ -300,8 +300,8 @@ const handleLogin = async () => {
 
 
 .logo-image {
-  width: 80%;
-  height: 80%;
+  /* width: 200px; */
+  height: 100%;
   object-fit: contain;
   border-radius: 8px;
 }

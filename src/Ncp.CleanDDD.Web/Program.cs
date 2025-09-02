@@ -10,7 +10,9 @@ using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Ncp.CleanDDD.Web.Application.Queries;
+using Ncp.CleanDDD.Web.Configuration;
 using Ncp.CleanDDD.Web.Extensions;
+using Ncp.CleanDDD.Web.Utils;
 using NetCorePal.Extensions.Primitives;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -60,12 +62,29 @@ try
     builder.Services.AddAuthentication().AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = false;
-        options.TokenValidationParameters.ValidAudience = "netcorepal";
+        options.TokenValidationParameters.ValidAudience = "audience-y";
         options.TokenValidationParameters.ValidateAudience = true;
-        options.TokenValidationParameters.ValidIssuer = "netcorepal";
+        options.TokenValidationParameters.ValidIssuer = "issuer-x";
         options.TokenValidationParameters.ValidateIssuer = true;
     });
     builder.Services.AddNetCorePalJwt().AddRedisStore();
+
+    #endregion
+
+    // 添加内存缓存
+    //builder.Services.AddMemoryCache();
+
+    #region CORS
+
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+    });
 
     #endregion
 
@@ -104,6 +123,8 @@ try
 
     builder.Services.Configure<JsonOptions>(o =>
         o.SerializerOptions.AddNetCorePalJsonConverters());
+
+    builder.Services.Configure<AppConfiguration>(builder.Configuration.GetSection("AppConfiguration"));
 
     #endregion
 
@@ -218,6 +239,9 @@ try
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureCreatedAsync();
+
+        //添加种子数据
+        app.SeedDatabase();
     }
 
     app.UseKnownExceptionHandler();
@@ -231,6 +255,9 @@ try
     app.UseStaticFiles();
     app.UseHttpsRedirection();
     app.UseRouting();
+    // 添加 CORS 中间件
+    app.UseCors("AllowAll");
+    app.UseAuthentication();
     app.UseAuthorization();
 
     #region Knife4UI

@@ -310,21 +310,7 @@
         label-width="100px"
         class="management-form"
       >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="id类型" prop="idType">
-              <el-select v-model="userForm.idType" placeholder="请选择id类型" clearable>
-                <el-option label="学号" value="学号" />
-                <el-option label="工号" value="工号" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="id" prop="idNo">
-              <el-input v-model="userForm.idNo" placeholder="请输入id" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+      
  
         <el-row :gutter="20">
           <el-col :span="12">
@@ -774,8 +760,6 @@ const userForm = reactive<RegisterRequest>({
   organizationUnitId: 0,
   organizationUnitName: '',
   birthDate: '',
-  idType: '',
-  idNo: '',
   userId: ''
 })
 
@@ -793,15 +777,11 @@ const validateConfirmPassword = (_: any, value: string, callback: any) => {
 }
 
 const userRules: FormRules = {
-  idType: [
-    { required: true, message: '请选择id类型', trigger: 'change' }
-  ],
+  
   name: [
     { required: true, message: '请输入用户名', trigger: 'onBlur' }
   ],
-  idNo: [
-    { required: true, message: '请输入id', trigger: 'onBlur' }
-  ],
+ 
   // email: [
   //   { required: true, message: '请输入邮箱', trigger: 'onBlur' },
   //   { type: 'email', message: '请输入正确的邮箱格式', trigger: 'onBlur' }
@@ -979,8 +959,6 @@ const showCreateDialog = () => {
     organizationUnitId: undefined,
     organizationUnitName: '',
     birthDate: '',
-    idType: '',
-    idNo: ''
   })
   dialogVisible.value = true
 }
@@ -1002,8 +980,6 @@ const handleEdit = (user: UserInfo) => {
     organizationUnitId: user.organizationUnitId,
     organizationUnitName: user.organizationUnitName,
     birthDate: user.birthDate,
-    idType: user.idType,
-    idNo: user.idNo
   })
   
   // 如果有出生日期，重新计算年龄
@@ -1080,8 +1056,6 @@ const handleSubmit = async () => {
         organizationUnitId: userForm.organizationUnitId,
         organizationUnitName: userForm.organizationUnitName,
         birthDate: userForm.birthDate,
-        idType: userForm.idType,
-        idNo: userForm.idNo,
         password:''
       })
       ElMessage.success('更新成功')

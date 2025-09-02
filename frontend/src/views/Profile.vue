@@ -131,10 +131,8 @@ const profileForm = reactive({
   gender: '',
   age: 0,
   birthDate: '',
-  idType: '',
   organizationUnitId: 0,
   organizationUnitName: '',
-  idNo: '',
   password: ''
 })
 
@@ -222,10 +220,8 @@ const handleUpdate = async () => {
       gender: profileForm.gender || '',
       age: profileForm.age || 0,
       birthDate: profileForm.birthDate || '',
-      idType: profileForm.idType || '',
       organizationUnitId: profileForm.organizationUnitId || 0,
       organizationUnitName: profileForm.organizationUnitName || '',
-      idNo: profileForm.idNo || '',
       password: profileForm.password || ''
     })
     ElMessage.success('更新成功')

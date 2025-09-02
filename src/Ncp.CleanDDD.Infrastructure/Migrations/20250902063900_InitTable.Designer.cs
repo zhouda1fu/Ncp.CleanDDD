@@ -12,7 +12,7 @@ using Ncp.CleanDDD.Infrastructure;
 namespace Ncp.CleanDDD.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250902060341_InitTable")]
+    [Migration("20250902063900_InitTable")]
     partial class InitTable
     {
         /// <inheritdoc />
@@ -256,7 +256,7 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserRefreshToken");
+                    b.ToTable("UserRefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate.UserRole", b =>

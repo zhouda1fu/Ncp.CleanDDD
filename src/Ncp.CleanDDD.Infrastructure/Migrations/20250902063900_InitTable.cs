@@ -136,7 +136,7 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "UserRefreshToken",
+                name: "UserRefreshTokens",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false),
@@ -150,9 +150,9 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserRefreshToken", x => x.Id);
+                    table.PrimaryKey("PK_UserRefreshTokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_UserRefreshToken_User_UserId",
+                        name: "FK_UserRefreshTokens_User_UserId",
                         column: x => x.UserId,
                         principalTable: "User",
                         principalColumn: "Id",
@@ -228,8 +228,8 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserRefreshToken_UserId",
-                table: "UserRefreshToken",
+                name: "IX_UserRefreshTokens_UserId",
+                table: "UserRefreshTokens",
                 column: "UserId");
         }
 
@@ -246,7 +246,7 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                 name: "UserOrganizationUnits");
 
             migrationBuilder.DropTable(
-                name: "UserRefreshToken");
+                name: "UserRefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "UserRole");

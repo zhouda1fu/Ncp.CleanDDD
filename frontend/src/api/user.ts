@@ -34,9 +34,7 @@ export interface RegisterRequest {
   organizationUnitId: number
   organizationUnitName: string
   birthDate: string
-  idType: string
   userId: string
-  idNo: string
 }
 
 export interface RegisterResponse {
@@ -83,8 +81,6 @@ export interface UpdateUserRequest {
   organizationUnitId: number
   organizationUnitName: string
   birthDate: string
-  idType: string
-  idNo: string
   password: string
 }
 
@@ -132,8 +128,6 @@ export interface UserInfo {
   organizationUnitId: number;
   organizationUnitName: string;
   birthDate: string;
-  idType: string;
-  idNo: string;
 }
 
 export interface GetUsersResponse {

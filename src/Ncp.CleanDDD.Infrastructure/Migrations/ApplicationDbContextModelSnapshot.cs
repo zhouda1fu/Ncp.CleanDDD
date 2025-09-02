@@ -253,7 +253,7 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserRefreshToken");
+                    b.ToTable("UserRefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate.UserRole", b =>

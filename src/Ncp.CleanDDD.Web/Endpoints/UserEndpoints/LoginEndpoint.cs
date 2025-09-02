@@ -64,22 +64,6 @@ public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
     public override async Task HandleAsync(LoginRequest req, CancellationToken ct)
     {
 
-        //// 合并逻辑
-        //string dbPath = @"D:\work\project\mindful-vrmanager\src\Ncp.CleanDDD.Web\Ncp.CleanDDD.db"; // 数据库文件路径
-        //using (var connection = new SqliteConnection($"Data Source={dbPath}"))
-        //{
-        //    connection.Open();
-        //    using (var command = connection.CreateCommand())
-        //    {
-        //        command.CommandText = "PRAGMA wal_checkpoint(FULL);";
-        //        command.ExecuteNonQuery();
-        //    }
-        //    connection.Close();
-        //}
-
-        //return;
-
-
         // 1. 查询：验证用户凭据
         var loginInfo = await _userQuery.GetUserInfoForLoginAsync(req.Username, ct) ?? throw new KnownException("无效的用户");
         if (!PasswordHasher.VerifyHashedPassword(req.Password, loginInfo.PasswordHash))

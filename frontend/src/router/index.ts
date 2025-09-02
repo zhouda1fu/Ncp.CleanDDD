@@ -30,15 +30,13 @@ const router = createRouter({
         //   meta: { permissions: ['SystemMonitor'] }
         // },
         ...menuRouteConfigs.map(convertToRouteConfig),
-        {
-          path: 'scale-report-detail/:userId/:recordId',
-          name: 'ScaleReportDetail',
-          component: () => import('@/views/ScaleReportDetail.vue'),
-          meta: { 
-            permissions: ['UserTrainingArchiveView'],
-            activeMenu: '/training-archives'
-          }
-        }
+         {
+          path: '',
+          name: 'Users',
+          component: () => import('@/views/Users.vue'),
+          meta: { permissions: ['SystemMonitor'] }
+        },
+       
       ]
     }
   ]

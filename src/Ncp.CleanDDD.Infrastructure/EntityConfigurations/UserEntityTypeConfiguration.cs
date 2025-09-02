@@ -96,4 +96,14 @@ namespace Ncp.CleanDDD.Infrastructure.EntityConfigurations
 
         }
     }
+
+    internal class UserRefreshTokenConfiguration : IEntityTypeConfiguration<UserRefreshToken>
+    {
+        public void Configure(EntityTypeBuilder<UserRefreshToken> builder)
+        {
+            builder.ToTable("UserRefreshTokens");
+            builder.HasKey(x => x.Id);
+            builder.Property(x => x.Id).UseSnowFlakeValueGenerator();
+        }
+    }
 }

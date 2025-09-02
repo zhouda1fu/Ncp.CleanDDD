@@ -204,9 +204,7 @@ const handleRegister = async () => {
       gender: '',
       age: 0,
       birthDate: '',
-      idType: '',
       userId: '',
-      idNo: '',
       confirmPassword: registerForm.confirmPassword
     }
     

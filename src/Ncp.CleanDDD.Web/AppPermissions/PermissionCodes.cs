@@ -38,46 +38,7 @@ namespace Ncp.CleanDDD.Web.AppPermissions
         public const string OrganizationUnitAssign = nameof(OrganizationUnitAssign);
         #endregion
 
-        #region 设备状态管理权限
-        public const string DeviceManagement = nameof(DeviceManagement);
-        public const string DeviceCreate = nameof(DeviceCreate);
-        public const string DeviceEdit = nameof(DeviceEdit);
-        public const string DeviceDelete = nameof(DeviceDelete);
-        public const string DeviceView = nameof(DeviceView);
-        #endregion
-
-        #region 团体任务管理权限
-        public const string GroupTaskManagement = nameof(GroupTaskManagement);
-        public const string GroupTaskCreate = nameof(GroupTaskCreate);
-        public const string GroupTaskEdit = nameof(GroupTaskEdit);
-        public const string GroupTaskDelete = nameof(GroupTaskDelete);
-        public const string GroupTaskView = nameof(GroupTaskView);
-        #endregion
-
-
-
-        #region 在线团体任务管理权限
-        //public const string GroupTaskListManagement = nameof(GroupTaskListManagement);
-        //public const string GroupTaskListCreate = nameof(GroupTaskListCreate);
-        //public const string GroupTaskListEdit = nameof(GroupTaskListEdit);
-        //public const string GroupTaskListDelete = nameof(GroupTaskListDelete);
-        //public const string GroupTaskListView = nameof(GroupTaskListView);
-        #endregion
-
-
-        #region 任务课程管理权限
-        public const string CourseManagement = nameof(CourseManagement);
-        public const string CourseCreate = nameof(CourseCreate);
-        public const string CourseEdit = nameof(CourseEdit);
-        public const string CourseDelete = nameof(CourseDelete);
-        public const string CourseView = nameof(CourseView);
-        #endregion
-
-        #region 用户训练档案管理权限
-        public const string UserTrainingArchiveManagement = nameof(UserTrainingArchiveManagement);
-        public const string UserTrainingArchiveView = nameof(UserTrainingArchiveView);
-        public const string UserTrainingArchiveDelete = nameof(UserTrainingArchiveDelete);
-        #endregion
+       
 
         #region 日志查看权限
         public const string LogView = nameof(LogView);
