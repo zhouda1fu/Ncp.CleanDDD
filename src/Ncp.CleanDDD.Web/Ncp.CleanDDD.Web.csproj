@@ -71,7 +71,6 @@
     <Folder Include="Application\IntegrationEventConverters\" />
     <Folder Include="Application\IntegrationEventHandlers\" />
     <Folder Include="Clients\" />
-    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>
