@@ -91,7 +91,7 @@ export const updateUser = ( data: UpdateUserRequest) => {
 
 // 重置密码
 export const resetPassword = (userId: string) => {
-  return api.put(`/user/passwordReset`, { userId })
+  return api.put(`/user/password-reset`, { userId })
 }
 
 // 更新用户角色
@@ -101,7 +101,7 @@ export interface UpdateUserRolesRequest {
 }
 
 export const updateUserRoles = ( data: UpdateUserRolesRequest) => {
-  return api.put(`/users/update_roles`, data)
+  return api.put(`/users/update-roles`, data)
 }
 
 // 获取用户列表

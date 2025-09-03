@@ -30,7 +30,7 @@ public class PasswordResetEndpoint : Endpoint<PasswordResetRequest, ResponseData
 
     public override void Configure()
     {
-        Put("/api/user/passwordReset");
+        Put("/api/user/password-reset");
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
         // FastEndpoints 会自动从 JWT claims 中验证权限
         Permissions(PermissionCodes.AllApiAccess,PermissionCodes.UserEdit);

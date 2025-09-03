@@ -55,7 +55,7 @@ public class RefreshTokenEndpoint : Endpoint<RefreshTokenRequest, ResponseData<R
 
     public override void Configure()
     {
-        Post("/api/user/refreshToken");
+        Post("/api/user/refresh-token");
         Tags("Users");
         AllowAnonymous();
     }
