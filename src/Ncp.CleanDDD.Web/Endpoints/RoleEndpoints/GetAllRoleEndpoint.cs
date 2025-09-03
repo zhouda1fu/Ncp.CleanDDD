@@ -23,7 +23,9 @@ public class GetAllRoleEndpoint : Endpoint<RoleQueryInput, ResponseData<PagedDat
     {
         Get("/api/roles");
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
-        Permissions(PermissionCodes.AllApiAccess,PermissionCodes.RoleView);
+        //Permissions(PermissionCodes.AllApiAccess,PermissionCodes.RoleView);
+        AllowAnonymous();
+
     }
 
     public override async Task HandleAsync(RoleQueryInput req, CancellationToken ct)

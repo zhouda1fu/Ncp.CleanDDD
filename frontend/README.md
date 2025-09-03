@@ -1,4 +1,4 @@
-# MindfulVRManager 前端管理系统
+# CleanDDD 前端管理系统
 
 基于 Vue 3 + TypeScript + Element Plus 构建的现代化管理系统前端。
 

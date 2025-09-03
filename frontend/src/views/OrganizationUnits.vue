@@ -12,8 +12,8 @@
           size="large"
           class="create-btn"
           @click="showCreateDialog = true"
+          icon="Plus"
         >
-          <el-icon><Plus /></el-icon>
           新增组织架构
         </el-button>
       </div>
@@ -216,9 +216,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="resetFormAndClose" size="large">取消</el-button>
-          <el-button type="primary" @click="submitForm" size="large" class="submit-btn">
-            <el-icon><Check /></el-icon>
+          <el-button @click="resetFormAndClose" size="large" icon="Close">取消</el-button>
+          <el-button type="primary" @click="submitForm" size="large" class="submit-btn" icon="Check">
             {{ editingOrganization ? '更新' : '创建' }}
           </el-button>
         </div>
@@ -231,10 +230,8 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  Plus, 
   Edit, 
   Delete, 
-  Check, 
   OfficeBuilding, 
   FolderOpened, 
   Grid, 

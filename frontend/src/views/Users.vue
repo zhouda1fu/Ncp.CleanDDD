@@ -13,8 +13,8 @@
           size="large"
           class="create-btn"
           @click="showCreateDialog"
+          icon="Plus"
         >
-          <el-icon><Plus /></el-icon>
           新建用户
         </el-button>
       </div>
@@ -70,8 +70,7 @@
             </el-form-item>
             <el-form-item>
               <div class="action-buttons">
-                <el-button type="primary" class="search-btn" @click="handleSearch">
-                  <el-icon><Search /></el-icon>
+                <el-button type="primary" class="search-btn" @click="handleSearch" icon="Search">
                   搜索 
                 </el-button>
                 <!-- <el-button class="reset-btn" @click="handleReset">
@@ -83,8 +82,8 @@
                   type="success" 
                   class="template-btn" 
                   @click="handleDownloadTemplate"
+                  icon="Download"
                 >
-                  <el-icon><Download /></el-icon>
                   下载模板
                 </el-button>
                 <el-button 
@@ -92,8 +91,8 @@
                   type="warning" 
                   class="import-btn" 
                   @click="showImportDialog"
+                  icon="Upload"
                 >
-                  <el-icon><Upload /></el-icon>
                   用户导入
                 </el-button>
               </div>
@@ -120,8 +119,8 @@
               size="small"
               class="batch-delete-btn"
               @click="handleBatchDelete"
+              icon="Delete"
             >
-              <el-icon><Delete /></el-icon>
               批量删除 ({{ selectedUsers.length }})
             </el-button>
             <el-button 
@@ -131,8 +130,8 @@
               size="small"
               class="batch-reset-password-btn"
               @click="handleBatchResetPassword"
+              icon="Refresh"
             >
-              <el-icon><Refresh /></el-icon>
               批量重置密码 ({{ selectedUsers.length }})
             </el-button>
           </div>
@@ -438,9 +437,8 @@
       
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogVisible = false" size="large">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="handleSubmit" size="large" class="submit-btn">
-            <el-icon v-if="!submitLoading"><Check /></el-icon>
+          <el-button @click="dialogVisible = false" size="large" icon="Close">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleSubmit" size="large" class="submit-btn" icon="Check">
             {{ isEdit ? '更新' : '创建' }}
           </el-button>
         </div>
@@ -642,7 +640,7 @@
       
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="importDialogVisible = false" size="large">取消</el-button>
+          <el-button @click="importDialogVisible = false" size="large" icon="Close">取消</el-button>
           <el-button 
             type="primary" 
             :loading="importLoading" 
@@ -650,8 +648,8 @@
             @click="handleImportSubmit" 
             size="large"
             class="submit-btn"
+            icon="Upload"
           >
-            <el-icon v-if="!importLoading"><Upload /></el-icon>
             开始导入
           </el-button>
         </div>
@@ -665,10 +663,8 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadFile, type UploadFiles } from 'element-plus'
 import {
-  Plus, 
   Search, 
   Refresh, 
-  Download, 
   Upload, 
   Edit, 
   Delete, 
@@ -682,7 +678,6 @@ import {
   OfficeBuilding, 
   Clock, 
   DocumentRemove,
-  Warning,
   UploadFilled,
   CircleCheck,
   CircleClose

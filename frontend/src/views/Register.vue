@@ -2,7 +2,7 @@
   <div class="register-container">
     <div class="register-box">
       <div class="register-header">
-        <h2>MindfulVRManager 管理系统</h2>
+        <h2>CleanDDD 管理系统</h2>
         <p>创建新账户</p>
       </div>
       

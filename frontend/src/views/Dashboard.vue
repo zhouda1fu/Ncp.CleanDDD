@@ -97,7 +97,7 @@
                 <el-icon size="16" color="#64748b"><InfoFilled /></el-icon>
                 <span>系统版本</span>
               </div>
-              <div class="info-value">MindfulVRManager v1.0.0</div>
+              <div class="info-value">CleanDDD v1.0.0</div>
             </div>
             
             <div class="info-item">

@@ -12,8 +12,8 @@
           size="large"
           class="create-btn" 
           @click="showCreateDialog"
+          icon="Plus"
         >
-          <el-icon><Plus /></el-icon>
           新建角色
         </el-button>
       </div>
@@ -42,12 +42,10 @@
             </el-form-item>
             <el-form-item>
               <div class="action-buttons">
-                <el-button type="primary" class="search-btn" @click="handleSearch">
-                  <el-icon><Search /></el-icon>
+                <el-button type="primary" class="search-btn" @click="handleSearch"  icon="Search">
                   搜索 
                 </el-button>
-                <el-button class="reset-btn" @click="handleReset">
-                  <el-icon><Refresh /></el-icon>
+                <el-button class="reset-btn" @click="handleReset"  icon="Refresh">
                   重置
                 </el-button>
               </div>
@@ -72,8 +70,8 @@
               type="danger" 
               size="small"
               class="batch-delete-btn"
+              icon="Delete"
             >
-              <el-icon><Delete /></el-icon>
               批量删除 ({{ selectedRoles.length }})
             </el-button>
           </div>
@@ -92,8 +90,7 @@
             <el-table-column prop="name" label="角色名称" min-width="150">
               <template #default="{ row }">
                 <div class="entity-cell">
-                  <el-avatar :size="32" class="entity-avatar">
-                    <el-icon><Setting /></el-icon>
+                  <el-avatar :size="32" class="entity-avatar" icon="Setting">
                   </el-avatar>
                   <div class="entity-info">
                     <div class="entity-name">{{ row.name }}</div>
@@ -258,9 +255,8 @@
       
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogVisible = false" size="large">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="handleSubmit" size="large" class="submit-btn">
-            <el-icon v-if="!submitLoading"><Check /></el-icon>
+          <el-button @click="dialogVisible = false" size="large" icon="Close" >取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleSubmit" size="large" class="submit-btn" icon="Check">
             {{ isEdit ? '更新' : '创建' }}
           </el-button>
         </div>

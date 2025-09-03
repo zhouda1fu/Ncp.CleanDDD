@@ -7,7 +7,7 @@
           <el-icon size="24"><Monitor /></el-icon>
           <!-- <img src="@/assets/images/logo.png" alt="Logo" class="logo-image" /> -->
         </div>
-        <!-- <h2 v-show="!isCollapsed">MindfulVRManager</h2> -->
+        <!-- <h2 v-show="!isCollapsed">CleanDDD</h2> -->
       </div>
       
       <el-menu
