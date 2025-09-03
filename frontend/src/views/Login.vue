@@ -93,12 +93,12 @@
             </el-button>
           </div> -->
           
-          <div class="register-link">
+          <!-- <div class="register-link">
             <span class="register-text">还没有账户？</span>
             <el-link type="primary" class="register-btn" @click="$router.push('/register')">
               立即注册
             </el-link>
-          </div>
+          </div> -->
         </div>
       </div>
       

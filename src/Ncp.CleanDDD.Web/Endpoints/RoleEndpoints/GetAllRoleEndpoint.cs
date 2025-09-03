@@ -23,8 +23,8 @@ public class GetAllRoleEndpoint : Endpoint<RoleQueryInput, ResponseData<PagedDat
     {
         Get("/api/roles");
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
-        //Permissions(PermissionCodes.AllApiAccess,PermissionCodes.RoleView);
-        AllowAnonymous();
+        Permissions(PermissionCodes.AllApiAccess,PermissionCodes.RoleView);
+        //AllowAnonymous();
 
     }
 

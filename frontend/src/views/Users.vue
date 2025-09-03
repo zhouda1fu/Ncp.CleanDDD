@@ -294,438 +294,63 @@
     </div>
     
     <!-- 创建/编辑用户对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="600px"
-      class="management-dialog"
-      :close-on-click-modal="false"
-      @close="handleDialogClose"
-    >
-      <el-form
-        ref="userFormRef"
-        :model="userForm"
-        :rules="userRules"
-        label-width="100px"
-        class="management-form"
-      >
-      
- 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="用户名" prop="name">
-              <el-input 
-                v-model="userForm.name" 
-                placeholder="请输入用户名"
-                :prefix-icon="User"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="邮箱" prop="email">
-              <el-input 
-                v-model="userForm.email" 
-                placeholder="请输入邮箱"
-                :prefix-icon="Message"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="真实姓名" prop="realName">
-              <el-input 
-                v-model="userForm.realName" 
-                placeholder="请输入真实姓名"
-                :prefix-icon="UserFilled"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="手机号" prop="phone">
-              <el-input 
-                v-model="userForm.phone" 
-                placeholder="请输入手机号"
-                :prefix-icon="Phone"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="性别" prop="gender">
-              <el-select v-model="userForm.gender" placeholder="请选择性别" clearable>
-                <el-option label="男" value="男" />
-                <el-option label="女" value="女" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="出生日期" prop="birthDate">
-              <el-date-picker 
-                v-model="userForm.birthDate" 
-                type="date" 
-                placeholder="请选择出生日期"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-form-item label="密码" prop="password" v-if="!isEdit">
-          <el-input
-            v-model="userForm.password"
-            type="password"
-            placeholder="请输入密码"
-            :prefix-icon="Lock"
-            show-password
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword" v-if="!isEdit">
-          <el-input
-            v-model="userForm.confirmPassword"  
-            type="password"
-            placeholder="请输入确认密码"
-            :prefix-icon="Lock"
-            show-password
-            clearable
-          />
-        </el-form-item>
-        
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="userForm.status" class="status-radio-group">
-            <el-radio :label="1" class="status-radio">
-              <div class="radio-content">
-                <el-icon size="16" color="#10b981"><CircleCheck /></el-icon>
-                <span>启用</span>
-              </div>
-            </el-radio>
-            <el-radio :label="0" class="status-radio">
-              <div class="radio-content">
-                <el-icon size="16" color="#ef4444"><CircleClose /></el-icon>
-                <span>禁用</span>
-              </div>
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        
-        <el-form-item label="组织架构" prop="organizationUnitId">
-          <el-tree-select
-            v-model="userForm.organizationUnitId"
-            :data="organizationTreeOptions"
-            placeholder="请选择组织架构"
-            clearable
-            check-strictly
-            :render-after-expand="false"
-            :props="{
-              value: 'id',
-              label: 'name',
-              children: 'children'
-            }"
-            @change="handleOrganizationUnitChange"
-            style="width: 100%"
-          />
-        </el-form-item>
-      </el-form>
-      
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="dialogVisible = false" size="large" icon="Close">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="handleSubmit" size="large" class="submit-btn" icon="Check">
-            {{ isEdit ? '更新' : '创建' }}
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
+    <UserFormDialog
+      v-model:visible="dialogVisible"
+      :is-edit="isEdit"
+      :user-data="currentUser"
+      :organization-tree-options="organizationTreeOptions"
+      @success="handleUserFormSuccess"
+    />
     
     <!-- 分配角色对话框 -->
-    <el-dialog
-      v-model="roleDialogVisible"
-      title="分配角色"
-      width="500px"
-      class="management-dialog"
-      :close-on-click-modal="false"
-    >
-      <div class="role-dialog-content">
-        <div class="user-info-card">
-          <el-avatar :size="48" class="user-avatar-large">
-            <el-icon><UserFilled /></el-icon>
-          </el-avatar>
-          <div class="user-details">
-            <div class="user-name-large">{{ currentUser?.name }}</div>
-            <div class="user-email-large">{{ currentUser?.email }}</div>
-          </div>
-        </div>
-        
-        <el-form label-width="80px" class="role-form">
-          <el-form-item label="角色">
-            <el-checkbox-group v-model="selectedRoleIds" class="role-checkbox-group">
-              <el-checkbox
-                v-for="role in allRoles"
-                :key="role.roleId"
-                :value="role.roleId"
-                class="role-checkbox"
-              >
-                <div class="role-checkbox-content">
-                  <el-icon size="16" color="#6366f1"><Setting /></el-icon>
-                  <span>{{ role.name }}</span>
-                </div>
-              </el-checkbox>
-            </el-checkbox-group>
-          </el-form-item>
-        </el-form>
-      </div>
-      
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="roleDialogVisible = false" size="large">取消</el-button>
-          <el-button type="primary" :loading="roleSubmitLoading" @click="handleRoleSubmit" size="large" class="submit-btn">
-            <el-icon v-if="!roleSubmitLoading"><Check /></el-icon>
-            确定
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
+    <UserRoleAssignDialog
+      v-model:visible="roleDialogVisible"
+      :user-data="currentUser"
+      :all-roles="allRoles"
+      @success="handleRoleAssignSuccess"
+    />
 
     <!-- 批量导入对话框 -->
-    <el-dialog
-      v-model="importDialogVisible"
-      title="批量导入用户"
-      width="600px"
-      class="management-dialog"
-      :close-on-click-modal="false"
-      @close="handleImportDialogClose"
-    >
-      <div class="import-dialog-content"> 
-        <!-- <div class="import-tips">
-          <div class="tips-header">
-            <el-icon size="18" color="#f59e0b"><Warning /></el-icon>
-            <span class="tips-title">导入说明</span>
-          </div>
-          <ul class="tips-list">
-            <li>请先下载导入模板，按照模板格式填写用户信息</li>
-            <li>支持Excel文件格式（.xlsx, .xls）</li>
-            <li>单次最多可导入1000条用户记录</li>
-            <li>用户名和邮箱不能重复，重复的记录将被跳过</li>
-            <li>所有导入的用户将统一分配选择的组织架构和角色</li>
-          </ul>
-        </div> -->
-
-        <!-- 批量设置区域 -->
-        <div class="batch-settings" v-if="!importResult">
-          <div class="settings-header">
-            <el-icon size="18" color="#10b981"><Setting /></el-icon>
-            <span class="settings-title">批量设置</span>
-          </div>
-          <el-form ref="importFormRef" :model="importForm" :rules="importRules" label-width="100px" class="import-settings-form">
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form-item label="组织架构" prop="organizationUnitId">
-                  <el-tree-select
-                    v-model="importForm.organizationUnitId"
-                    :data="organizationTreeOptions"
-                    placeholder="请选择组织架构"
-                    clearable
-                    check-strictly
-                    :render-after-expand="false"
-                    :props="{
-                      value: 'id',
-                      label: 'name',
-                      children: 'children'
-                    }"
-                    @change="handleImportFormOrganizationUnitChange"
-                    class="full-width"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="用户角色" prop="roleIds">
-                  <el-select 
-                    v-model="importForm.roleIds" 
-                    placeholder="请选择角色" 
-                    multiple
-                    clearable
-                    class="full-width"
-                  >
-                    <el-option
-                      v-for="role in allRoles"
-                      :key="role.roleId"
-                      :label="role.name"
-                      :value="role.roleId"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-form>
-        </div>
-        
-        <el-upload v-if="!importResult"
-          ref="uploadRef"
-          class="upload-demo"
-          drag
-          :auto-upload="false"
-          :multiple="false"
-          accept=".xlsx,.xls"
-          :on-change="handleFileChange"
-          :file-list="fileList"
-          :limit="1"
-        >
-          <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-          <div class="el-upload__text">
-            将Excel文件拖到此处，或<em>点击上传</em>
-          </div>
-          <template #tip>
-            <div class="el-upload__tip">
-              只能上传xlsx/xls文件，且不超过10MB
-            </div>
-          </template>
-        </el-upload>
-        
-        <!-- 导入结果 -->
-        <div v-if="importResult" class="import-result">
-          <div class="result-header">
-            <el-icon size="18" :color="importResult.failCount > 0 ? '#f59e0b' : '#10b981'">
-              <component :is="importResult.failCount > 0 ? 'Warning' : 'CircleCheck'" />
-            </el-icon>
-            <span class="result-title">导入结果</span>
-          </div>
-          <div class="result-stats">
-            <div class="stat-item">
-              <span class="stat-label">总计：</span>
-              <span class="stat-value">{{ importResult.totalCount }}</span>
-            </div>
-            <div class="stat-item success">
-              <span class="stat-label">成功：</span>
-              <span class="stat-value">{{ importResult.successCount }}</span>
-            </div>
-            <div class="stat-item error" v-if="importResult.failCount > 0">
-              <span class="stat-label">失败：</span>
-              <span class="stat-value">{{ importResult.failCount }}</span>
-            </div>
-          </div>
-          
-          <!-- 失败详情 -->
-          <div v-if="importResult.failedRows && importResult.failedRows.length > 0" class="failed-details">
-            <div class="failed-header">失败详情：</div>
-            <div class="failed-list">
-              <div 
-                v-for="(failedRow, index) in importResult.failedRows" 
-                :key="index"
-                class="failed-item"
-              >
-                <div class="failed-row">第{{ failedRow.row }}行：</div>
-                <div class="failed-errors">
-                  <el-tag 
-                    v-for="(error, errorIndex) in failedRow.errors" 
-                    :key="errorIndex"
-                    type="danger" 
-                    size="small"
-                  >
-                    {{ error }}
-                  </el-tag>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="importDialogVisible = false" size="large" icon="Close">取消</el-button>
-          <el-button 
-            type="primary" 
-            :loading="importLoading" 
-            :disabled="!selectedFile"
-            @click="handleImportSubmit" 
-            size="large"
-            class="submit-btn"
-            icon="Upload"
-          >
-            开始导入
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
+    <UserImportDialog
+      v-model:visible="importDialogVisible"
+      :all-roles="allRoles"
+      :organization-tree-options="organizationTreeOptions"
+      @success="handleImportSuccess"
+    />
 
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watch } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadFile, type UploadFiles } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search, 
   Refresh, 
   Upload, 
   Edit, 
   Delete, 
-  Check, 
-  User, 
-  UserFilled, 
-  Message, 
-  Phone, 
-  Lock, 
   Setting, 
   OfficeBuilding, 
   Clock, 
-  DocumentRemove,
-  UploadFilled,
-  CircleCheck,
-  CircleClose
+  DocumentRemove
 } from '@element-plus/icons-vue'
-import { register, resetPassword, updateUser, updateUserRoles, getUsers, deleteUser, downloadUserTemplate, batchImportUsers, type RegisterRequest, type UserInfo, type BatchImportUsersResponse } from '@/api/user'
+import { resetPassword, getUsers, deleteUser, downloadUserTemplate, type UserInfo } from '@/api/user'
+import { UserFormDialog, UserRoleAssignDialog, UserImportDialog } from '@/components'
 import { getAllRoles, type RoleInfo } from '@/api/role'
 import { organizationApi, type OrganizationUnit, type OrganizationUnitTree } from '@/api/organization'
 import { hasPermission } from '@/utils/permission'
 
 const loading = ref(false)
-const submitLoading = ref(false)
-const roleSubmitLoading = ref(false)
-const importLoading = ref(false)
 const dialogVisible = ref(false)
 const roleDialogVisible = ref(false)
 const importDialogVisible = ref(false)
 const isEdit = ref(false)
-const currentUserId = ref<string>('')
 const currentUser = ref<any>(null)
-
-// 批量导入相关
-const selectedFile = ref<File | null>(null)
-const fileList = ref<UploadFiles>([])
-const importResult = ref<BatchImportUsersResponse | null>(null)
-const uploadRef = ref()
-
-// 导入表单数据
-const importForm = reactive({
-  organizationUnitId: null as number | null,
-  organizationUnitName: '',
-  roleIds: [] as string[]
-})
-
-// 批量导入表单校验
-const importFormRef = ref<FormInstance>()
-const importRules: FormRules = {
-  organizationUnitId: [
-    { required: true, message: '请选择组织架构', trigger: 'change' }
-  ],
-  roleIds: [
-    { type: 'array', required: true, message: '请选择至少一个角色', trigger: 'change' }
-  ]
-}
 
 const users = ref<UserInfo[]>([])
 const selectedUsers = ref<UserInfo[]>([])
 const allRoles = ref<RoleInfo[]>([])
-const selectedRoleIds = ref<string[]>([])
 const organizationOptions = ref<OrganizationUnit[]>([])
 const organizationTreeOptions = ref<OrganizationUnitTree[]>([])
 
@@ -741,72 +366,7 @@ const pagination = reactive({
   total: 0
 })
 
-const userForm = reactive<RegisterRequest>({
-  name: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-  phone: '',
-  realName: '',
-  status: 1,
-  roleIds: [],
-  gender: '',
-  age: 0,
-  organizationUnitId: 0,
-  organizationUnitName: '',
-  birthDate: '',
-  userId: ''
-})
 
-const userFormRef = ref<FormInstance>()
-
-// 密码确认验证函数
-const validateConfirmPassword = (_: any, value: string, callback: any) => {
-  if (value === '') {
-    callback(new Error('请再次输入密码'))
-  } else if (value !== userForm.password) {
-    callback(new Error('两次输入密码不一致'))
-  } else {
-    callback()
-  }
-}
-
-const userRules: FormRules = {
-  
-  name: [
-    { required: true, message: '请输入用户名', trigger: 'onBlur' }
-  ],
- 
-  // email: [
-  //   { required: true, message: '请输入邮箱', trigger: 'onBlur' },
-  //   { type: 'email', message: '请输入正确的邮箱格式', trigger: 'onBlur' }
-  // ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'onBlur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'onBlur' }
-  ],
-  confirmPassword: [
-    { required: true, validator: validateConfirmPassword, trigger: 'onBlur' }
-  ],
-  realName: [
-    { required: true, message: '请输入真实姓名', trigger: 'onBlur' }
-  ],
-  // phone: [
-  //   { required: true, message: '请输入手机号', trigger: 'onBlur' }
-  // ],
-  gender: [
-    { required: true, message: '请选择性别', trigger: 'change' }
-  ],
-  organizationUnitId: [
-    { required: true, message: '请选择组织架构', trigger: 'change' }
-  ],
-  birthDate: [
-    { required: true, message: '请选择出生日期', trigger: 'change' }
-  ]
-  // 年龄现在根据出生日期自动计算，不需要验证规则
-}
-
-const dialogTitle = computed(() => isEdit.value ? '编辑用户' : '新建用户')
 
 // 在树形结构中递归查找指定ID的组织架构
 const findOrganizationById = (treeData: OrganizationUnitTree[], id: number): OrganizationUnitTree | null => {
@@ -824,32 +384,9 @@ const findOrganizationById = (treeData: OrganizationUnitTree[], id: number): Org
   return null;
 }
 
-// 计算年龄的函数
-const calculateAge = (birthDate: string | Date): number => {
-  if (!birthDate) return 0
-  
-  const birth = new Date(birthDate)
-  const today = new Date()
-  
-  let age = today.getFullYear() - birth.getFullYear()
-  const monthDiff = today.getMonth() - birth.getMonth()
-  
-  // 如果还没过生日，年龄减1
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
-  
-  return age > 0 ? age : 0
-}
 
-// 监听出生日期变化，自动计算年龄
-watch(() => userForm.birthDate, (newBirthDate) => {
-  if (newBirthDate) {
-    userForm.age = calculateAge(newBirthDate)
-  } else {
-    userForm.age = 0
-  }
-})
+
+
 
 const loadOrganizationUnits = async () => {
   // 检查是否有权限
@@ -939,57 +476,13 @@ const handleSelectionChange = (selection: UserInfo[]) => {
 
 const showCreateDialog = () => {
   isEdit.value = false
-  currentUserId.value = ''
-  Object.assign(userForm, {
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    realName: '',
-    status: 1,
-    roleIds: [],
-    gender: '',
-    age: 0,
-    organizationUnitId: undefined,
-    organizationUnitName: '',
-    birthDate: '',
-  })
+  currentUser.value = null
   dialogVisible.value = true
 }
 
 const handleEdit = (user: UserInfo) => {
   isEdit.value = true
-  currentUserId.value = user.userId
-  Object.assign(userForm, {
-    name: user.name,
-    email: user.email,
-    password: '',
-    confirmPassword: '',
-    phone: user.phone,
-    realName: user.realName,
-    status: user.status,
-    roleIds: [],
-    gender: user.gender,
-    age: user.age,
-    organizationUnitId: user.organizationUnitId,
-    organizationUnitName: user.organizationUnitName,
-    birthDate: user.birthDate,
-  })
-  
-  // 如果有出生日期，重新计算年龄
-  if (user.birthDate) {
-    userForm.age = calculateAge(user.birthDate)
-  }
-  
-  // 如果用户有组织架构ID但没有名称，自动设置名称
-  if (user.organizationUnitId && !user.organizationUnitName) {
-    const selectedOrg = findOrganizationById(organizationTreeOptions.value, user.organizationUnitId);
-    if (selectedOrg) {
-      userForm.organizationUnitName = selectedOrg.name;
-    }
-  }
-  
+  currentUser.value = user
   dialogVisible.value = true
 }
 
@@ -1005,10 +498,6 @@ const handleResetPassword = async (user: UserInfo) => {
 
 const handleRoles = (user: UserInfo) => {
   currentUser.value = user
-  selectedRoleIds.value = user.roles.map((role: string) => {
-    const foundRole = allRoles.value.find(r => r.name === role)
-    return foundRole?.roleId || ''
-  }).filter(Boolean)
   roleDialogVisible.value = true
 }
 
@@ -1031,98 +520,7 @@ const handleDelete = async (user: UserInfo) => {
   }
 }
 
-const handleSubmit = async () => {
-  if (!userFormRef.value) return
-  
-  try {
-    await userFormRef.value.validate()
-    submitLoading.value = true
-    
-    if (isEdit.value) {
-      await updateUser({
-        userId: currentUserId.value,
-        name: userForm.name,
-        email: userForm.email,
-        phone: userForm.phone,
-        realName: userForm.realName,
-        status: userForm.status,
-        gender: userForm.gender,
-        age: userForm.age,
-        organizationUnitId: userForm.organizationUnitId,
-        organizationUnitName: userForm.organizationUnitName,
-        birthDate: userForm.birthDate,
-        password:''
-      })
-      ElMessage.success('更新成功')
-    } else {
-      // 创建用户时，确保密码和确认密码一致
-      if (userForm.password !== userForm.confirmPassword) {
-        ElMessage.error('两次输入的密码不一致')
-        return
-      }
-      await register(userForm)
-      ElMessage.success('创建成功')
-    }
-    
-    dialogVisible.value = false
-    loadUsers()
-  } catch (error: any) {
-    // 错误已在全局拦截器中处理
-  } finally {
-    submitLoading.value = false
-  }
-}
 
-const handleRoleSubmit = async () => {
-  if (!currentUser.value) return
-  
-  try {
-    roleSubmitLoading.value = true
-    await updateUserRoles({
-      roleIds: selectedRoleIds.value,
-      userId: currentUser.value.userId
-    })
-    ElMessage.success('角色分配成功')
-    roleDialogVisible.value = false
-    loadUsers()
-  } catch (error: any) {
-    // 错误已在全局拦截器中处理
-  } finally {
-    roleSubmitLoading.value = false
-  }
-}
-
-const handleOrganizationUnitChange = (value: number | undefined) => {
-  if (value) {
-    const selectedOrg = findOrganizationById(organizationTreeOptions.value, value);
-    if (selectedOrg) {
-      userForm.organizationUnitName = selectedOrg.name;
-    } else {
-      userForm.organizationUnitName = '';
-    }
-  } else {
-    userForm.organizationUnitName = '';
-  }
-};
-
-
-const handleImportFormOrganizationUnitChange = (value: number | undefined) => {
-  if (value) {
-    const selectedOrg = findOrganizationById(organizationTreeOptions.value, value);
-    if (selectedOrg) {
-      importForm.organizationUnitName = selectedOrg.name;
-    } else {
-      importForm.organizationUnitName = '';
-    }
-  } else {
-    importForm.organizationUnitName = '';
-  }
-};
-
-
-const handleDialogClose = () => {
-  userFormRef.value?.resetFields()
-}
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleString('zh-CN')
@@ -1186,89 +584,21 @@ const handleBatchResetPassword = async () => {
 // 显示导入对话框
 const showImportDialog = () => {
   importDialogVisible.value = true
-  importResult.value = null
-  selectedFile.value = null
-  fileList.value = []
-  // 重置导入表单
-  importFormRef.value?.resetFields()
-  importForm.organizationUnitId = null
-  importForm.organizationUnitName = ''
-  importForm.roleIds = []
 }
 
-// 文件选择变化
-const handleFileChange = (file: UploadFile, uploadFiles: UploadFiles) => {
-  // 文件大小检查（10MB）
-  const maxSize = 10 * 1024 * 1024
-  if (file.raw && file.raw.size > maxSize) {
-    ElMessage.error('文件大小不能超过 10MB')
-    uploadRef.value?.clearFiles()
-    return
-  }
-  
-  // 文件格式检查
-  const allowedTypes = [
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-excel'
-  ]
-  if (file.raw && !allowedTypes.includes(file.raw.type)) {
-    ElMessage.error('请选择Excel文件（.xlsx 或 .xls）')
-    uploadRef.value?.clearFiles()
-    return
-  }
-  
-  selectedFile.value = file.raw || null
-  fileList.value = uploadFiles
+// 用户表单成功处理
+const handleUserFormSuccess = () => {
+  loadUsers()
 }
 
-// 导入提交
-const handleImportSubmit = async () => {
-  if (!selectedFile.value) {
-    ElMessage.error('请选择要导入的文件')
-    return
-  }
-  
-  try {
-    // 验证必填项
-    if (importFormRef.value) {
-      await importFormRef.value.validate()
-    }
-    importLoading.value = true
-    const response = await batchImportUsers({
-      file: selectedFile.value,
-      organizationUnitId: importForm.organizationUnitId || undefined,
-      organizationUnitName: importForm.organizationUnitName || undefined,
-      roleIds: importForm.roleIds.length > 0 ? importForm.roleIds : undefined
-    })
-    importResult.value = response.data
-    
-    if (response.data.failCount === 0) {
-      ElMessage.success(`导入成功！共导入 ${response.data.successCount} 个用户`)
-      // 刷新用户列表
-      loadUsers()
-    } else {
-      ElMessage.warning(
-        `导入完成！成功 ${response.data.successCount} 个，失败 ${response.data.failCount} 个`
-      )
-    }
-  } catch (error: any) {
-    ElMessage.error('导入失败，请检查文件格式和内容')
-  } finally {
-    importLoading.value = false
-  }
+// 角色分配成功处理
+const handleRoleAssignSuccess = () => {
+  loadUsers()
 }
 
-// 导入对话框关闭
-const handleImportDialogClose = () => {
-  importResult.value = null
-  selectedFile.value = null
-  fileList.value = []
-  uploadRef.value?.clearFiles()
-  importFormRef.value?.resetFields()
-  // 重置导入表单
-  importForm.organizationUnitId = null
-  importForm.organizationUnitName = ''
-  importForm.roleIds = []
+// 导入成功处理
+const handleImportSuccess = () => {
+  loadUsers()
 }
 
 onMounted(() => {
