@@ -7,24 +7,27 @@ using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 using Ncp.CleanDDD.Web.Tests.Extensions;
 using NetCorePal.Extensions.Dto;
-using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Asn1.Ocsp;
-using System;
-using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 
 namespace Ncp.CleanDDD.Web.Tests;
 
 [Collection("web")]
-public class UserTests
+public class UserTests : IDisposable
 {
     private readonly HttpClient _client;
     private string? _authToken;
     private string? _refreshToken;
     private UserId? _testUserId;
+    private readonly List<UserId> _createdUserIds = new();
+
+    // 测试数据常量
+    private const string TestPassword = "Test123!";
+    private const string TestPhone = "13800138000";
+    private const string TestRealName = "测试用户";
+    private const int TestStatus = 1;
+    private const string TestGender = "男";
+    private const int TestAge = 25;
 
     public UserTests(MyWebApplicationFactory factory)
     {
@@ -33,6 +36,32 @@ public class UserTests
 
         // 在构造函数中登录获取token
         LoginAndGetToken().GetAwaiter().GetResult();
+    }
+
+    public void Dispose()
+    {
+        // 清理测试过程中创建的用户
+        CleanupTestUsers().GetAwaiter().GetResult();
+    }
+
+    private async Task CleanupTestUsers()
+    {
+        if (_authToken != null)
+        {
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
+            
+            foreach (var userId in _createdUserIds)
+            {
+                try
+                {
+                    await _client.DeleteAsync($"/api/users/{userId}");
+                }
+                catch
+                {
+                    // 忽略清理过程中的错误
+                }
+            }
+        }
     }
 
     private async Task LoginAndGetToken()
@@ -62,88 +91,87 @@ public class UserTests
         }
     }
 
-
-
-    [Fact]
-    public async Task Register_New_User_Should_Succeed()
+    private void SetAuthHeader(bool useAuth = true)
     {
-        // 移除认证头，因为注册端点允许匿名访问
-        _client.DefaultRequestHeaders.Authorization = null;
+        if (useAuth && _authToken != null)
+        {
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
+        }
+        else
+        {
+            _client.DefaultRequestHeaders.Authorization = null;
+        }
+    }
 
-        var registerRequest = new RegisterRequest(
-            Name: "testuser",
-            Email: "test@example.com",
-            Password: "Test123!",
-            Phone: "13800138000",
-            RealName: "测试用户",
-            Status: 1,
-            Gender: "男",
-            Age: 25,
-            BirthDate: DateTime.Now.AddYears(-25),
+    private RegisterRequest CreateTestRegisterRequest(string name, string email, string phone = TestPhone)
+    {
+        return new RegisterRequest(
+            Name: name,
+            Email: email,
+            Password: TestPassword,
+            Phone: phone,
+            RealName: TestRealName,
+            Status: TestStatus,
+            Gender: TestGender,
+            Age: TestAge,
+            BirthDate: DateTime.Now.AddYears(-TestAge),
             OrganizationUnitId: null,
             OrganizationUnitName: null,
             RoleIds: new List<RoleId>()
         );
+    }
 
+    [Fact]
+    public async Task Register_NewUser_ShouldSucceed()
+    {
+        // Arrange
+        SetAuthHeader(false);
+        var uniqueName = $"testuser_{Guid.NewGuid():N}";
+        var uniqueEmail = $"test_{Guid.NewGuid():N}@example.com";
+        var registerRequest = CreateTestRegisterRequest(uniqueName, uniqueEmail);
+
+        // Act
         var response = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
 
+        // Assert
         Assert.True(response.IsSuccessStatusCode);
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
         Assert.NotNull(responseData);
         Assert.NotNull(responseData.Data);
-        Assert.Equal("testuser", responseData.Data.Name);
-        Assert.Equal("test@example.com", responseData.Data.Email);
+        Assert.Equal(uniqueName, responseData.Data.Name);
+        Assert.Equal(uniqueEmail, responseData.Data.Email);
+
+        // 记录创建的用户ID用于清理
+        _createdUserIds.Add(responseData.Data.UserId);
 
         // 恢复认证头
-        if (_authToken != null)
-        {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-        }
+        SetAuthHeader(true);
     }
 
     [Fact]
-    public async Task Register_With_Duplicate_Username_Should_Fail()
+    public async Task Register_WithDuplicateUsername_ShouldFail()
     {
-        // 移除认证头
-        _client.DefaultRequestHeaders.Authorization = null;
+        // Arrange
+        SetAuthHeader(false);
+        var registerRequest = CreateTestRegisterRequest("admin", "admin2@example.com", "13800138001");
 
-        var registerRequest = new RegisterRequest(
-            Name: "admin", // 使用已存在的用户名
-            Email: "admin2@example.com",
-            Password: "Test123!",
-            Phone: "13800138001",
-            RealName: "管理员2",
-            Status: 1,
-            Gender: "男",
-            Age: 30,
-            BirthDate: DateTime.Now.AddYears(-30),
-            OrganizationUnitId: null,
-            OrganizationUnitName: null,
-            RoleIds: new List<RoleId>()
-        );
-
+        // Act
         var response = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
 
+        // Assert
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
-
-        if (responseData == null)
-        {
-            Assert.Fail("responseData为null");
-        }
-
+        Assert.NotNull(responseData);
         Assert.True(response.IsSuccessStatusCode);
         Assert.Equal(400, responseData.Code);
 
         // 恢复认证头
-        if (_authToken != null)
-        {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-        }
+        SetAuthHeader(true);
     }
 
     [Fact]
-    public async Task Get_All_Users_Should_Succeed()
+    public async Task GetAllUsers_ShouldSucceed()
     {
+        // Arrange
         var queryInput = new UserQueryInput
         {
             PageIndex = 1,
@@ -154,10 +182,11 @@ public class UserTests
             CountTotal = true
         };
 
-        // 构建查询字符串
+        // Act
         var queryString = $"?pageIndex={queryInput.PageIndex}&pageSize={queryInput.PageSize}&countTotal={queryInput.CountTotal}";
         var response = await _client.GetAsync($"/api/users{queryString}");
 
+        // Assert
         Assert.True(response.IsSuccessStatusCode);
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<PagedData<UserInfoQueryDto>>>();
         Assert.NotNull(responseData);
@@ -166,15 +195,11 @@ public class UserTests
         Assert.True(responseData.Data.Total > 0);
     }
 
-
-
-
     [Fact]
-    public async Task Update_User_Should_Succeed()
+    public async Task UpdateUser_ShouldSucceed()
     {
-
+        // Arrange
         var userId = await CreateTestUserForProfile();
-
         var updateRequest = new UpdateUserRequest(
             UserId: userId,
             Name: "updateduser",
@@ -190,8 +215,10 @@ public class UserTests
             Password: "NewPassword123!"
         );
 
+        // Act
         var response = await _client.PutAsNewtonsoftJsonAsync("/api/user/update", updateRequest);
 
+        // Assert
         Assert.True(response.IsSuccessStatusCode);
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<UpdateUserResponse>>();
         Assert.NotNull(responseData);
@@ -200,157 +227,109 @@ public class UserTests
         Assert.Equal("updated@example.com", responseData.Data.Email);
     }
 
-
-
     [Fact]
-    public async Task Refresh_Token_Should_Succeed()
+    public async Task RefreshToken_ShouldSucceed()
     {
+        // Arrange
         if (_refreshToken == null)
         {
-            // 如果没有refresh token，先登录获取
             await LoginAndGetToken();
         }
 
         var refreshRequest = new RefreshTokenRequest(_refreshToken!);
+
+        // Act
         var response = await _client.PostAsJsonAsync("/api/user/refresh-token", refreshRequest);
 
+        // Assert
         Assert.True(response.IsSuccessStatusCode);
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RefreshTokenResponse>>();
         Assert.NotNull(responseData);
         Assert.NotNull(responseData.Data);
         Assert.NotNull(responseData.Data.Token);
         Assert.NotNull(responseData.Data.RefreshToken);
-        Assert.NotEqual(_refreshToken, responseData.Data.RefreshToken); // 新的refresh token应该不同
+        Assert.NotEqual(_refreshToken, responseData.Data.RefreshToken);
     }
 
-
-
     [Fact]
-    public async Task Delete_User_Should_Succeed()
+    public async Task DeleteUser_ShouldSucceed()
     {
-        // 先创建一个测试用户用于删除
+        // Arrange
         var testUserId = await CreateTestUserForDeletion();
+
+        // Act
         var response = await _client.DeleteAsync($"/api/users/{testUserId}");
 
+        // Assert
         Assert.True(response.IsSuccessStatusCode);
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
         Assert.NotNull(responseData);
         Assert.True(responseData.Data);
     }
 
-
-
     [Fact]
-    public async Task Update_User_Roles_Should_Succeed()
+    public async Task UpdateUserRoles_ShouldSucceed()
     {
-
-        var registerRequest = new RegisterRequest(
-         Name: "update_user_roles",
-         Email: "update_user_roles@example.com",
-         Password: "Test123!",
-         Phone: "13800138003",
-         RealName: "资料测试用户",
-         Status: 1,
-         Gender: "男",
-         Age: 28,
-         BirthDate: DateTime.Now.AddYears(-28),
-         OrganizationUnitId: null,
-         OrganizationUnitName: null,
-         RoleIds: new List<RoleId>()
-     );
+        // Arrange
+        var uniqueName = $"update_user_roles_{Guid.NewGuid():N}";
+        var uniqueEmail = $"update_user_roles_{Guid.NewGuid():N}@example.com";
+        var registerRequest = CreateTestRegisterRequest(uniqueName, uniqueEmail, "13800138003");
 
         var registerResponse = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
         var registerResponseData = await registerResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
-
-        if (registerResponseData == null)
-        {
-            Assert.Fail("responseData为null");
-        }
+        Assert.NotNull(registerResponseData);
 
         var roleIds = new List<RoleId> { new RoleId(Guid.NewGuid()) };
         var updateRolesRequest = new UpdateUserRolesRequest(registerResponseData.Data.UserId, roleIds);
+
+        // Act
         var response = await _client.PutAsNewtonsoftJsonAsync("/api/users/update-roles", updateRolesRequest);
 
+        // Assert
         Assert.True(response.IsSuccessStatusCode);
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<UpdateUserRolesResponse>>();
         Assert.NotNull(responseData);
         Assert.NotNull(responseData.Data);
         Assert.Equal(registerResponseData.Data.UserId, responseData.Data.UserId);
+
+        // 记录创建的用户ID用于清理
+        _createdUserIds.Add(registerResponseData.Data.UserId);
     }
-
-
 
     // 辅助方法：创建测试用户
     private async Task<UserId> CreateTestUserForProfile()
     {
-        // 移除认证头
-        _client.DefaultRequestHeaders.Authorization = null;
+        SetAuthHeader(false);
 
-        var registerRequest = new RegisterRequest(
-            Name: "user" + Guid.NewGuid(),
-            Email: "profiletest@example.com",
-            Password: "Test123!",
-            Phone: "13800138002",
-            RealName: "资料测试用户",
-            Status: 1,
-            Gender: "男",
-            Age: 28,
-            BirthDate: DateTime.Now.AddYears(-28),
-            OrganizationUnitId: null,
-            OrganizationUnitName: null,
-            RoleIds: new List<RoleId>()
-        );
+        var uniqueName = $"profiletest_{Guid.NewGuid():N}";
+        var registerRequest = CreateTestRegisterRequest(uniqueName, "profiletest@example.com", "13800138002");
 
         var response = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
 
-        if (responseData == null)
-        {
-            Assert.Fail("responseData为null");
-        }
-        // 恢复认证头
-        if (_authToken != null)
-        {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-        }
-
+        Assert.NotNull(responseData);
+        
+        SetAuthHeader(true);
         _testUserId = responseData.Data.UserId;
+        _createdUserIds.Add(_testUserId);
+        
         return _testUserId;
     }
 
     private async Task<UserId> CreateTestUserForDeletion()
     {
-        // 移除认证头
-        _client.DefaultRequestHeaders.Authorization = null;
+        SetAuthHeader(false);
 
-        var registerRequest = new RegisterRequest(
-            Name: "deletetestuser",
-            Email: "deletetest@example.com",
-            Password: "Test123!",
-            Phone: "13800138003",
-            RealName: "删除测试用户",
-            Status: 1,
-            Gender: "女",
-            Age: 24,
-            BirthDate: DateTime.Now.AddYears(-24),
-            OrganizationUnitId: null,
-            OrganizationUnitName: null,
-            RoleIds: new List<RoleId>()
-        );
+        var uniqueName = $"deletetest_{Guid.NewGuid():N}";
+        var registerRequest = CreateTestRegisterRequest(uniqueName, "deletetest@example.com", "13800138003");
 
         var response = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
         var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
 
-        // 恢复认证头
-        if (_authToken != null)
-        {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-        }
+        SetAuthHeader(true);
 
-        if (responseData == null)
-        {
-            Assert.Fail("responseData为null");
-        }
+        Assert.NotNull(responseData);
+        _createdUserIds.Add(responseData.Data.UserId);
 
         return responseData.Data.UserId;
     }
