@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 
 namespace Ncp.CleanDDD.Web.Tests.Extensions;
 
-public class MyWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class MyWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly TestContainerFixture Containers = new TestContainerFixture();
 
@@ -12,9 +12,7 @@ public class MyWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLif
         NewtonsoftJsonDefaults.DefaultOptions.Converters.Add(new NewtonsoftEntityIdJsonConverter());
     }
 
-    public MyWebApplicationFactory()
-    {
-    }
+   
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {

@@ -145,7 +145,7 @@ export const getUsers = (params: GetUsersRequest) => {
 
 // 删除用户
 export const deleteUser = (userId: string) => {
-  return api.delete(`/users`, { data: { userId } })
+  return api.delete(`/users/${userId}`)
 }
 
 

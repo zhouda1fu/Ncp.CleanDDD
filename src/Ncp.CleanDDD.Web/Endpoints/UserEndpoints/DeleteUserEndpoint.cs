@@ -1,22 +1,19 @@
 using FastEndpoints;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using NetCorePal.Extensions.Dto;
+using Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate;
 using Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate;
 using Ncp.CleanDDD.Web.Application.Commands.UserCommands;
 using Ncp.CleanDDD.Web.AppPermissions;
+using NetCorePal.Extensions.Dto;
 
 namespace Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 
-/// <summary>
-/// 删除请求模型
-/// </summary>
-/// <param name="UserId">用户id</param>
-public record DeleteUserRequest(UserId UserId);
+
 
 
 [Tags("Users")]
-public class DeleteUserEndpoint : Endpoint<DeleteUserRequest, ResponseData<bool>>
+public class DeleteUserEndpoint : EndpointWithoutRequest<ResponseData<bool>>
 {
     private readonly IMediator _mediator;
 
@@ -27,15 +24,16 @@ public class DeleteUserEndpoint : Endpoint<DeleteUserRequest, ResponseData<bool>
 
     public override void Configure()
     {
-        Delete("/api/users");
+        Delete("/api/users/{userId}");
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
-        Permissions(PermissionCodes.AllApiAccess,PermissionCodes.UserDelete);
-       
+        Permissions(PermissionCodes.AllApiAccess, PermissionCodes.UserDelete);
+
     }
 
-    public override async Task HandleAsync(DeleteUserRequest req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        var command = new DeleteUserCommand(req.UserId);
+        var userId = Route<UserId>("userId") ?? throw new KnownException("id不能为空");
+        var command = new DeleteUserCommand(userId);
         await _mediator.Send(command, ct);
         await Send.OkAsync(true.AsResponseData(), cancellation: ct);
     }
@@ -44,13 +42,12 @@ public class DeleteUserEndpoint : Endpoint<DeleteUserRequest, ResponseData<bool>
 /// <summary>
 /// 删除用户端点的API文档配置
 /// </summary>
-public class DeleteUserSummary : Summary<DeleteUserEndpoint, DeleteUserRequest>
+public class DeleteUserSummary : Summary<DeleteUserEndpoint>
 {
     public DeleteUserSummary()
     {
         Summary = "删除用户";
         Description = "根据用户ID删除指定的用户账户";
-        ExampleRequest = new DeleteUserRequest(new UserId(0));
         ResponseExamples[200] = new ResponseData<bool>(true, true, "用户删除成功");
         Responses[200] = "用户删除成功";
         Responses[401] = "权限不足，无法删除用户";
