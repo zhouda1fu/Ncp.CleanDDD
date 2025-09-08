@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Configuration;
 using Ncp.CleanDDD.Web.Extensions;
+using Ncp.CleanDDD.Web.Infrastructure.Logging;
 using Ncp.CleanDDD.Web.Utils;
 using NetCorePal.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -24,13 +25,17 @@ using StackExchange.Redis;
 using System.Reflection;
 using System.Text.Json;
 
-Log.Logger = new LoggerConfiguration()
-    .Enrich.WithClientIp()
-    .WriteTo.Console(new JsonFormatter())
-    .CreateLogger();
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+    
+    var logConnectionString = builder.Configuration.GetConnectionString("MySql");
+    Log.Logger = new LoggerConfiguration()
+        .Enrich.WithClientIp()
+        .Enrich.WithCorrelationId() // 添加CorrelationId丰富器
+        .WriteTo.Console(new JsonFormatter())
+        .WriteTo.Sink(new MySqlCorrelationSink(logConnectionString!))
+        .CreateLogger();
     builder.Host.UseSerilog();
 
     #region SignalR
@@ -152,6 +157,7 @@ try
     builder.Services.AddScoped<UserQuery>();
     builder.Services.AddScoped<RoleQuery>();
     builder.Services.AddScoped<OrganizationUnitQuery>();
+    builder.Services.AddScoped<LogQuery>();
 
     #endregion
 
