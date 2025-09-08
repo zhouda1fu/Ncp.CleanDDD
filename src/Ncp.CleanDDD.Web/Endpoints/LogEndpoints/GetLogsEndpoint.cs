@@ -90,7 +90,7 @@ public class GetLogsEndpointSummary : Summary<GetLogsEndpoint>
         Description = "查询系统中的日志信息，支持分页、按级别筛选、时间范围筛选和关键词搜索";
         
         // 响应说明
-        Response<ResponseData<PagedData<LogItemDto>>>(200, "成功获取日志列表");
+        Response<PagedData<LogItemDto>>(200, "成功获取日志列表");
         Response(401, "未授权访问");
         Response(403, "权限不足");
         Response(500, "服务器内部错误");

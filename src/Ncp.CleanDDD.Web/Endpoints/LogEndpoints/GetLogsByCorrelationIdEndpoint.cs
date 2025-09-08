@@ -67,7 +67,7 @@ public class GetLogsByCorrelationIdEndpointSummary : Summary<GetLogsByCorrelatio
         Description = "查询特定关联ID下的所有日志记录，按时间顺序排列，便于追踪请求的完整日志链路";
         
         // 响应说明
-        Response<ResponseData<IEnumerable<LogItemDto>>>(200, "成功获取关联ID下的日志列表");
+        Response<IEnumerable<LogItemDto>>(200, "成功获取关联ID下的日志列表");
         Response(401, "未授权访问");
         Response(403, "权限不足");
         Response(404, "未找到指定关联ID的日志");
