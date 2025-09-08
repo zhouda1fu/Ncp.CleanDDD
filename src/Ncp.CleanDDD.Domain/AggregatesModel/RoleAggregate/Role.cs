@@ -18,7 +18,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate
 
         public string Name { get; private set; } = string.Empty;
         public string Description { get; private set; } = string.Empty;
-        public DateTime CreatedAt { get; init; }
+        public DateTimeOffset CreatedAt { get; init; }
         public bool IsActive { get; private set; } = true;
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate
         /// <summary>
         /// 删除时间
         /// </summary>
-        public DeletedTime DeletedAt { get; private set; } = new DeletedTime(DateTime.UtcNow);
+        public DeletedTime DeletedAt { get; private set; } = new DeletedTime(DateTimeOffset.UtcNow);
 
         public virtual ICollection<RolePermission> Permissions { get; init; } = [];
 
@@ -38,7 +38,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate
 
         public Role(string name, string description, IEnumerable<RolePermission> permissions)
         {
-            CreatedAt = DateTime.Now;
+            CreatedAt = DateTimeOffset.Now;
             Name = name;
             Description = description;
             Permissions = new List<RolePermission>(permissions);

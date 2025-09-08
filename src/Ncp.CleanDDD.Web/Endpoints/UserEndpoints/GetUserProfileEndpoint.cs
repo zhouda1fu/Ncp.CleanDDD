@@ -30,7 +30,7 @@ public record GetUserProfileRequest(UserId UserId);
 /// <param name="BirthDate">出生日期</param>
 /// <param name="OrganizationUnitId">组织单位ID（可为空）</param>
 /// <param name="OrganizationUnitName">组织单位名称</param>
-public record UserProfileResponse(UserId UserId, string Name, string Phone, IEnumerable<string> Roles, string RealName, int Status, string Email, DateTime CreatedAt, string Gender, int Age, DateTime BirthDate, OrganizationUnitId? OrganizationUnitId, string OrganizationUnitName);
+public record UserProfileResponse(UserId UserId, string Name, string Phone, IEnumerable<string> Roles, string RealName, int Status, string Email, DateTimeOffset CreatedAt, string Gender, int Age, DateTimeOffset BirthDate, OrganizationUnitId? OrganizationUnitId, string OrganizationUnitName);
 
 /// <summary>
 /// 获取用户资料的API端点

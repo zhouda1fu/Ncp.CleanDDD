@@ -17,7 +17,7 @@ namespace Ncp.CleanDDD.Web.Endpoints.OrganizationUnitEndpoints;
 /// <param name="SortOrder">排序顺序</param>
 /// <param name="IsActive">是否激活</param>
 /// <param name="CreatedAt">创建时间</param>
-public record GetOrganizationUnitResponse(OrganizationUnitId Id, string Name, string Description, OrganizationUnitId ParentId, int SortOrder, bool IsActive, DateTime CreatedAt);
+public record GetOrganizationUnitResponse(OrganizationUnitId Id, string Name, string Description, OrganizationUnitId ParentId, int SortOrder, bool IsActive, DateTimeOffset CreatedAt);
 
 /// <summary>
 /// 获取单个组织单位的API端点

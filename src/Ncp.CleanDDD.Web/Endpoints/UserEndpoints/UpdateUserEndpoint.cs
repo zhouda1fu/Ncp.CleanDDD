@@ -25,7 +25,7 @@ namespace Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 /// <param name="OrganizationUnitId">组织单位ID</param>
 /// <param name="OrganizationUnitName">组织单位名称</param>
 /// <param name="Password">密码（可选，为空则不更新）</param>
-public record UpdateUserRequest(UserId UserId, string Name, string Email, string Phone, string RealName, int Status, string Gender, int Age, DateTime BirthDate, OrganizationUnitId OrganizationUnitId, string OrganizationUnitName, string Password);
+public record UpdateUserRequest(UserId UserId, string Name, string Email, string Phone, string RealName, int Status, string Gender, int Age, DateTimeOffset BirthDate, OrganizationUnitId OrganizationUnitId, string OrganizationUnitName, string Password);
 
 /// <summary>
 /// 更新用户信息的响应模型
@@ -149,7 +149,7 @@ public class UpdateUserSummary : Summary<UpdateUserEndpoint, UpdateUserRequest>
             1,
             "男",
             30,
-            DateTime.Now.AddYears(-30),
+            DateTimeOffset.Now.AddYears(-30),
             new OrganizationUnitId(1),
             "技术部",
             "newPassword123"

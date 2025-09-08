@@ -25,7 +25,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
         /// <summary>
         /// 分配时间
         /// </summary>
-        public DateTime AssignedAt { get; init; }
+        public DateTimeOffset AssignedAt { get; init; }
 
 
 
@@ -33,7 +33,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
         {
             UserId = userId;
             OrganizationUnitId = organizationUnitId;
-            AssignedAt = DateTime.UtcNow;
+            AssignedAt = DateTimeOffset.UtcNow;
             OrganizationUnitName = organizationUnitName;
         }
 

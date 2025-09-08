@@ -26,7 +26,7 @@ namespace Ncp.CleanDDD.Web.Application.Queries;
 /// <param name="IdType">ID类型</param>
 /// <param name="IdNo">ID</param>
 /// <param name="Cosplay">角色扮演</param>
-public record UserInfoQueryDto(UserId UserId, string Name, string Phone, IEnumerable<string> Roles, string RealName, int Status, string Email, DateTime CreatedAt, string Gender, int Age, OrganizationUnitId OrganizationUnitId, string OrganizationUnitName, DateTime BirthDate);
+public record UserInfoQueryDto(UserId UserId, string Name, string Phone, IEnumerable<string> Roles, string RealName, int Status, string Email, DateTimeOffset CreatedAt, string Gender, int Age, OrganizationUnitId OrganizationUnitId, string OrganizationUnitName, DateTimeOffset BirthDate);
 
 public record UserLoginInfoQueryDto(UserId UserId, string Name, string Email, string PasswordHash, IEnumerable<UserRole> UserRoles);
 

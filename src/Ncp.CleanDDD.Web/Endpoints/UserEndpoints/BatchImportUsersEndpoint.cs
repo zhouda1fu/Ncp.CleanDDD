@@ -372,17 +372,17 @@ public class BatchImportUsersEndpoint : Endpoint<BatchImportUsersRequest, Respon
         }
     }
 
-    private bool TryParseBirthDate(string birthDateStr, out DateTime birthDate)
+    private bool TryParseBirthDate(string birthDateStr, out DateTimeOffset birthDate)
     {
         birthDate = default;
 
-        if (DateTime.TryParseExact(birthDateStr, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        if (DateTimeOffset.TryParseExact(birthDateStr, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
             birthDate = date;
             return true;
         }
 
-        if (DateTime.TryParse(birthDateStr, out date))
+        if (DateTimeOffset.TryParse(birthDateStr, out date))
         {
             birthDate = date;
             return true;

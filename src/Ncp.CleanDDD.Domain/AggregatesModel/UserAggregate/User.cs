@@ -25,9 +25,9 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
 
         public string PasswordHash { get; private set; } = string.Empty;
         public bool IsActive { get; private set; } = true;
-        public DateTime CreatedAt { get; init; }
-        public DateTime? LastLoginTime { get; private set; }
-        public UpdateTime UpdateTime { get; private set; } = new UpdateTime(DateTime.UtcNow);
+        public DateTimeOffset CreatedAt { get; init; }
+        public DateTimeOffset? LastLoginTime { get; private set; }
+        public UpdateTime UpdateTime { get; private set; } = new UpdateTime(DateTimeOffset.UtcNow);
 
         /// <summary>
         /// 删除标记
@@ -37,7 +37,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
         /// <summary>
         /// 删除时间
         /// </summary>
-        public DeletedTime DeletedAt { get; private set; } = new DeletedTime(DateTime.UtcNow);
+        public DeletedTime DeletedAt { get; private set; } = new DeletedTime(DateTimeOffset.UtcNow);
 
         /// <summary>
         /// 性别
@@ -52,7 +52,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
         /// <summary>
         /// 出生日期
         /// </summary>
-        public DateTime BirthDate { get; private set; } = default!;
+        public DateTimeOffset BirthDate { get; private set; } = default!;
 
 
         // 用户角色关系
@@ -66,9 +66,9 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
 
      
 
-        public User(string name, string phone, string password, IEnumerable<UserRole> roles, string realName, int status, string email, string gender, DateTime birthDate)
+        public User(string name, string phone, string password, IEnumerable<UserRole> roles, string realName, int status, string email, string gender, DateTimeOffset birthDate)
         {
-            CreatedAt = DateTime.Now;
+            CreatedAt = DateTimeOffset.Now;
             Name = name;
             Phone = phone;
             PasswordHash = password;
@@ -103,10 +103,10 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
             RefreshTokens.Add(refreshTokenInfo);
         }
 
-        public void UpdateLastLoginTime(DateTime loginTime)
+        public void UpdateLastLoginTime(DateTimeOffset loginTime)
         {
             LastLoginTime = loginTime;
-            UpdateTime = new UpdateTime(DateTime.UtcNow);
+            UpdateTime = new UpdateTime(DateTimeOffset.UtcNow);
         }
 
 
@@ -123,9 +123,9 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
 
 
 
-        public static int CalculateAge(DateTime birthDate)
+        public static int CalculateAge(DateTimeOffset birthDate)
         {
-            var today = DateTime.Today;
+            var today = DateTimeOffset.Now.Date;
             int age = today.Year - birthDate.Year;
 
             // 如果生日还没过，则减一岁
@@ -137,7 +137,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
             return age;
         }
 
-        public void UpdateUserInfo(string name, string phone, string realName, int status, string email, string gender, DateTime birthDate)
+        public void UpdateUserInfo(string name, string phone, string realName, int status, string email, string gender, DateTimeOffset birthDate)
         {
             Name = name;
             Phone = phone;
@@ -160,7 +160,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate
             if (!string.IsNullOrEmpty(newPasswordHash))
             {
                 PasswordHash = newPasswordHash;
-                UpdateTime = new UpdateTime(DateTime.UtcNow);
+                UpdateTime = new UpdateTime(DateTimeOffset.UtcNow);
             }
 
 

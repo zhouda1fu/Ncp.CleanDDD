@@ -94,7 +94,7 @@ namespace Ncp.CleanDDD.Web.Utils
                     1,
                     "admin@example.com",
                     "男",
-                    DateTime.Now.AddYears(-30) // 假设管理员年龄为30岁
+                    DateTimeOffset.Now.AddYears(-30) // 假设管理员年龄为30岁
                 );
 
                 // 设置组织架构关系
@@ -118,7 +118,7 @@ namespace Ncp.CleanDDD.Web.Utils
                     1,
                     "test@example.com",
                     "女",
-                    DateTime.Now.AddYears(-30) // 假设管理员年龄为30岁
+                    DateTimeOffset.Now.AddYears(-30) // 假设管理员年龄为30岁
                 );
 
                 testUser.AssignOrganizationUnit(new UserOrganizationUnit(testUser.Id, organizationUnit.Id, organizationUnit.Name));

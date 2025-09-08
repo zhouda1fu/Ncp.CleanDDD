@@ -6,7 +6,7 @@ using Ncp.CleanDDD.Web.Application.Queries;
 
 namespace Ncp.CleanDDD.Web.Application.Commands.UserCommands;
 
-public record UpdateUserLoginTimeCommand(UserId UserId, DateTime LoginTime,string RefreshToken) : ICommand;
+public record UpdateUserLoginTimeCommand(UserId UserId, DateTimeOffset LoginTime,string RefreshToken) : ICommand;
 
 public class UpdateUserLoginTimeCommandValidator : AbstractValidator<UpdateUserLoginTimeCommand>
 {

@@ -10,7 +10,7 @@ using Ncp.CleanDDD.Infrastructure;
 
 namespace Ncp.CleanDDD.Web.Application.Queries;
 
-public record OrganizationUnitQueryDto(OrganizationUnitId Id, string Name, string Description, OrganizationUnitId ParentId, int SortOrder, bool IsActive, DateTime CreatedAt, DateTime? DeletedAt);
+public record OrganizationUnitQueryDto(OrganizationUnitId Id, string Name, string Description, OrganizationUnitId ParentId, int SortOrder, bool IsActive, DateTimeOffset CreatedAt, DateTimeOffset? DeletedAt);
 
 public class OrganizationUnitQueryInput
 {
@@ -29,7 +29,7 @@ public record OrganizationUnitTreeDto(
     OrganizationUnitId ParentId,
     int SortOrder,
     bool IsActive,
-    DateTime CreatedAt,
+    DateTimeOffset CreatedAt,
     IEnumerable<OrganizationUnitTreeDto> Children);
 public class OrganizationUnitQuery(ApplicationDbContext applicationDbContext) : IQuery
 {

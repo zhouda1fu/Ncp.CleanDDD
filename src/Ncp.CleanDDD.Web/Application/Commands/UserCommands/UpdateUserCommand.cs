@@ -7,7 +7,7 @@ namespace Ncp.CleanDDD.Web.Application.Commands.UserCommands
 {
 
 
-    public record UpdateUserCommand(UserId UserId, string Name, string Email, string Phone, string RealName, int Status, string Gender, int Age, DateTime BirthDate, OrganizationUnitId OrganizationUnitId, string OrganizationUnitName,string PasswordHash) : ICommand<UserId>;
+    public record UpdateUserCommand(UserId UserId, string Name, string Email, string Phone, string RealName, int Status, string Gender, int Age, DateTimeOffset BirthDate, OrganizationUnitId OrganizationUnitId, string OrganizationUnitName,string PasswordHash) : ICommand<UserId>;
 
     public class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
     {

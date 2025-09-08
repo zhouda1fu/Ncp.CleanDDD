@@ -36,7 +36,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime CreatedAt { get; init; }
+        public DateTimeOffset CreatedAt { get; init; }
 
         /// <summary>
         /// 是否激活
@@ -51,12 +51,12 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate
         /// <summary>
         /// 删除时间
         /// </summary>
-        public DateTime? DeletedAt { get; private set; }
+        public DateTimeOffset? DeletedAt { get; private set; }
 
         /// <summary>
         /// 更新时间
         /// </summary>
-        public UpdateTime UpdateTime { get; private set; } = new UpdateTime(DateTime.UtcNow);
+        public UpdateTime UpdateTime { get; private set; } = new UpdateTime(DateTimeOffset.UtcNow);
 
         /// <summary>
         /// 子组织架构
@@ -68,7 +68,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate
 
         public OrganizationUnit(string name, string description, OrganizationUnitId parentId, int sortOrder)
         {
-            CreatedAt = DateTime.Now;
+            CreatedAt = DateTimeOffset.Now;
             Name = name;
             Description = description;
             ParentId = parentId;
@@ -85,7 +85,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate
             Description = description;
             ParentId = parentId;
             SortOrder = sortOrder;
-            UpdateTime = new UpdateTime(DateTime.UtcNow);
+            UpdateTime = new UpdateTime(DateTimeOffset.UtcNow);
 
             AddDomainEvent(new OrganizationUnitInfoChangedDomainEvent(this));
         }
@@ -101,7 +101,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate
             }
 
             IsActive = true;
-            UpdateTime = new UpdateTime(DateTime.UtcNow);
+            UpdateTime = new UpdateTime(DateTimeOffset.UtcNow);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate
             }
 
             IsActive = false;
-            UpdateTime = new UpdateTime(DateTime.UtcNow);
+            UpdateTime = new UpdateTime(DateTimeOffset.UtcNow);
         }
 
         /// <summary>
@@ -129,8 +129,8 @@ namespace Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate
             }
 
             IsDeleted = true;
-            DeletedAt = DateTime.UtcNow;
-            UpdateTime = new UpdateTime(DateTime.UtcNow);
+            DeletedAt = DateTimeOffset.UtcNow;
+            UpdateTime = new UpdateTime(DateTimeOffset.UtcNow);
         }
 
         /// <summary>

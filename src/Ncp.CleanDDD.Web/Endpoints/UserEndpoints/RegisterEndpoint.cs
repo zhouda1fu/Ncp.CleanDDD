@@ -23,7 +23,7 @@ namespace Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 /// <param name="OrganizationUnitId">组织单位ID（可选）</param>
 /// <param name="OrganizationUnitName">组织单位名称（可选）</param>
 /// <param name="RoleIds">要分配的角色ID列表</param>
-public record RegisterRequest(string Name, string Email, string Password, string Phone, string RealName, int Status, string Gender, int Age, DateTime BirthDate, OrganizationUnitId? OrganizationUnitId, string? OrganizationUnitName, IEnumerable<RoleId> RoleIds);
+public record RegisterRequest(string Name, string Email, string Password, string Phone, string RealName, int Status, string Gender, int Age, DateTimeOffset BirthDate, OrganizationUnitId? OrganizationUnitId, string? OrganizationUnitName, IEnumerable<RoleId> RoleIds);
 
 /// <summary>
 /// 用户注册的响应模型
@@ -140,7 +140,7 @@ public class RegisterSummary : Summary<RegisterEndpoint, RegisterRequest>
             1,
             "男",
             25,
-            DateTime.Now.AddYears(-25),
+            DateTimeOffset.Now.AddYears(-25),
             new OrganizationUnitId(1),
             "技术部",
             new[] { new RoleId(Guid.NewGuid()), new RoleId(Guid.NewGuid()) }

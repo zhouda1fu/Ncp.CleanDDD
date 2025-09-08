@@ -114,7 +114,7 @@ public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
 
         // 第二步：生成JWT令牌和刷新令牌
         var refreshToken = TokenGenerator.GenerateRefreshToken();
-        var nowTime = DateTime.Now;
+        var nowTime = DateTimeOffset.Now;
         var tokenExpiryTime = nowTime.AddMinutes(_appConfiguration.Value.TokenExpiryInMinutes);
         
         // 获取用户的角色列表
@@ -142,7 +142,7 @@ public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
         }
 
         // 使用 FastEndpoints 的 JWT 生成方式创建访问令牌
-        var token = await _jwtProvider.GenerateJwtToken(new JwtData("issuer-x", "audience-y", claims, nowTime, tokenExpiryTime), ct);
+        var token = await _jwtProvider.GenerateJwtToken(new JwtData("issuer-x", "audience-y", claims, nowTime.UtcDateTime, tokenExpiryTime.UtcDateTime), ct);
 
         // 创建登录响应对象，包含令牌和用户信息
         var response = new LoginResponse(
@@ -156,7 +156,7 @@ public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
         );
 
         // 更新用户登录时间和刷新令牌
-        var updateCmd = new UpdateUserLoginTimeCommand(loginInfo.UserId, DateTime.UtcNow, refreshToken);
+        var updateCmd = new UpdateUserLoginTimeCommand(loginInfo.UserId, DateTimeOffset.UtcNow, refreshToken);
         await _mediator.Send(updateCmd, ct);
 
         // 返回成功响应，使用统一的响应数据格式包装

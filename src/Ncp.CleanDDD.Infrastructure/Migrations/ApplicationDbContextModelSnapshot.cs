@@ -27,10 +27,10 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                     b.Property<long>("Id")
                         .HasColumnType("bigint");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime?>("DeletedAt")
+                    b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
@@ -76,7 +76,7 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTimeOffset>("DeletedAt")
@@ -138,10 +138,10 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                     b.Property<int>("Age")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("BirthDate")
+                    b.Property<DateTimeOffset>("BirthDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTimeOffset>("DeletedAt")
@@ -163,7 +163,7 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<DateTime?>("LastLoginTime")
+                    b.Property<DateTimeOffset?>("LastLoginTime")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Name")
@@ -206,7 +206,7 @@ namespace Ncp.CleanDDD.Infrastructure.Migrations
                     b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
-                    b.Property<DateTime>("AssignedAt")
+                    b.Property<DateTimeOffset>("AssignedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<long>("OrganizationUnitId")

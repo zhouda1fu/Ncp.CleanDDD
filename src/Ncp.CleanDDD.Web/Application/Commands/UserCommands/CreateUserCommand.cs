@@ -8,7 +8,7 @@ using Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate;
 
 namespace Ncp.CleanDDD.Web.Application.Commands.UserCommands;
 
-public record CreateUserCommand(string Name, string Email, string Password, string Phone, string RealName, int Status, string Gender,  DateTime BirthDate, OrganizationUnitId? OrganizationUnitId, string? OrganizationUnitName, IEnumerable<AssignAdminUserRoleQueryDto> RolesToBeAssigned) : ICommand<UserId>;
+public record CreateUserCommand(string Name, string Email, string Password, string Phone, string RealName, int Status, string Gender,  DateTimeOffset BirthDate, OrganizationUnitId? OrganizationUnitId, string? OrganizationUnitName, IEnumerable<AssignAdminUserRoleQueryDto> RolesToBeAssigned) : ICommand<UserId>;
 
 public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
 {

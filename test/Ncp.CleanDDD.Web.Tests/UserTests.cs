@@ -114,7 +114,7 @@ public class UserTests : IDisposable
             Status: TestStatus,
             Gender: TestGender,
             Age: TestAge,
-            BirthDate: DateTime.Now.AddYears(-TestAge),
+            BirthDate: DateTimeOffset.Now.AddYears(-TestAge),
             OrganizationUnitId: null,
             OrganizationUnitName: null,
             RoleIds: new List<RoleId>()
@@ -209,7 +209,7 @@ public class UserTests : IDisposable
             Status: 1,
             Gender: "女",
             Age: 26,
-            BirthDate: DateTime.Now.AddYears(-26),
+            BirthDate: DateTimeOffset.Now.AddYears(-26),
             OrganizationUnitId: new OrganizationUnitId(1),
             OrganizationUnitName: "测试部门",
             Password: "NewPassword123!"

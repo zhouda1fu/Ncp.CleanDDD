@@ -6,7 +6,7 @@ using Ncp.CleanDDD.Infrastructure;
 
 namespace Ncp.CleanDDD.Web.Application.Queries;
 
-public record RoleQueryDto(RoleId RoleId, string Name, string Description, bool IsActive, DateTime CreatedAt, IEnumerable<string> PermissionCodes);
+public record RoleQueryDto(RoleId RoleId, string Name, string Description, bool IsActive, DateTimeOffset CreatedAt, IEnumerable<string> PermissionCodes);
 
 public class RoleQueryInput : PageRequest
 {

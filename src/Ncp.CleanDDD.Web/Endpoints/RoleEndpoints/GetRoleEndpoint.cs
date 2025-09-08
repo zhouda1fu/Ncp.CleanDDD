@@ -21,7 +21,7 @@ public record GetRoleRequest(RoleId RoleId);
 /// <param name="Description">角色描述</param>
 /// <param name="IsActive">是否激活</param>
 /// <param name="CreatedAt">创建时间</param>
-public record GetRoleResponse(RoleId Id, string Name, string Description, bool IsActive, DateTime CreatedAt);
+public record GetRoleResponse(RoleId Id, string Name, string Description, bool IsActive, DateTimeOffset CreatedAt);
 
 /// <summary>
 /// 获取角色信息的API端点
