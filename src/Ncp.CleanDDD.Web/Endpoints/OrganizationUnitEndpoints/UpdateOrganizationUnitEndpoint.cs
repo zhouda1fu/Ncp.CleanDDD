@@ -11,11 +11,12 @@ namespace Ncp.CleanDDD.Web.Endpoints.OrganizationUnitEndpoints;
 /// <summary>
 /// 更新组织单位的请求模型
 /// </summary>
+/// <param name="Id">OrganizationUnitId</param>
 /// <param name="Name">组织单位名称</param>
 /// <param name="Description">组织单位描述</param>
 /// <param name="ParentId">父级组织单位ID，可为空表示顶级组织</param>
 /// <param name="SortOrder">排序顺序</param>
-public record UpdateOrganizationUnitRequest(string Name, string Description, OrganizationUnitId? ParentId, int SortOrder);
+public record UpdateOrganizationUnitRequest(OrganizationUnitId Id, string Name, string Description, OrganizationUnitId? ParentId, int SortOrder);
 
 /// <summary>
 /// 更新组织单位的API端点
@@ -63,14 +64,10 @@ public class UpdateOrganizationUnitEndpoint : Endpoint<UpdateOrganizationUnitReq
     /// <returns>异步任务</returns>
     public override async Task HandleAsync(UpdateOrganizationUnitRequest request, CancellationToken ct)
     {
-        // 从路由参数中获取组织单位ID
-        // 如果ID为空则抛出异常
-        var organizationUnitId = Route<OrganizationUnitId>("organizationUnitId") ?? throw new KnownException("组织架构ID不能为空");
-        
         // 将请求转换为领域命令对象
         // 如果父级ID为空，则设置为根组织单位（ID为0）
         var command = new UpdateOrganizationUnitCommand(
-            organizationUnitId,                    // 要更新的组织单位ID
+            request.Id,                    // 要更新的组织单位ID
             request.Name,                          // 新的组织单位名称
             request.Description,                   // 新的组织单位描述
             request.ParentId ?? new OrganizationUnitId(0), // 父级组织单位ID，默认为根组织
@@ -96,6 +93,7 @@ public class UpdateOrganizationUnitSummary : Summary<UpdateOrganizationUnitEndpo
         Description = "修改现有组织单位的基本信息，包括名称、描述、父级组织和排序";
         Response<bool>(200, "组织单位更新成功");
         ExampleRequest = new UpdateOrganizationUnitRequest(
+            new OrganizationUnitId(1),
             "技术研发部", 
             "负责技术研发和产品开发", 
             null, 

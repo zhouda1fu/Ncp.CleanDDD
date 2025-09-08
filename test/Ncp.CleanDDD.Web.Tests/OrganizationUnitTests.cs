@@ -274,6 +274,7 @@ public class OrganizationUnitTests : IDisposable
 
         // 更新组织单位
         var updateRequest = new UpdateOrganizationUnitRequest(
+            createResult.Data.Id,
             Name: "更新后的部门名称",
             Description: "更新后的描述",
             ParentId: null,
@@ -300,7 +301,7 @@ public class OrganizationUnitTests : IDisposable
     {
         // Arrange
         var nonExistentId = new OrganizationUnitId(99999);
-        var updateRequest = new UpdateOrganizationUnitRequest(
+        var updateRequest = new UpdateOrganizationUnitRequest(nonExistentId,
             Name: "不存在的部门",
             Description: "不存在的描述",
             ParentId: null,
@@ -436,6 +437,7 @@ public class OrganizationUnitTests : IDisposable
         // Arrange
         SetAuthHeader(false);
         var updateRequest = new UpdateOrganizationUnitRequest(
+            new OrganizationUnitId(1),
             Name: "未授权更新",
             Description: "未授权描述",
             ParentId: null,
