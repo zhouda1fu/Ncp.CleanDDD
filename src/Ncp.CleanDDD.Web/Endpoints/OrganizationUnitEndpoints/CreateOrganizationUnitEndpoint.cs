@@ -29,23 +29,10 @@ public record CreateOrganizationUnitResponse(OrganizationUnitId Id, string Name,
 /// 创建组织单位的API端点
 /// 该端点用于在系统中创建新的组织单位，支持层级结构
 /// </summary>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
 [Tags("OrganizationUnits")] // API文档标签，用于Swagger文档分组
-public class CreateOrganizationUnitEndpoint : Endpoint<CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>
+public class CreateOrganizationUnitEndpoint(IMediator mediator) : Endpoint<CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取中介者实例
-    /// </summary>
-    /// <param name="mediator">中介者接口实例</param>
-    public CreateOrganizationUnitEndpoint(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、认证方案、权限要求等
@@ -54,10 +41,10 @@ public class CreateOrganizationUnitEndpoint : Endpoint<CreateOrganizationUnitReq
     {
         // 设置HTTP POST方法，用于创建新的组织单位
         Post("/api/organization-units");
-        
+
         // 设置JWT Bearer认证方案，要求用户必须提供有效的JWT令牌
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
-        
+
         // 设置权限要求：用户必须同时拥有API访问权限和组织单位创建权限
         Permissions(PermissionCodes.AllApiAccess, PermissionCodes.OrganizationUnitCreate);
     }
@@ -82,7 +69,7 @@ public class CreateOrganizationUnitEndpoint : Endpoint<CreateOrganizationUnitReq
 
         // 通过中介者发送命令，执行实际的业务逻辑
         // 返回新创建的组织单位ID
-        var organizationUnitId = await _mediator.Send(command, ct);
+        var organizationUnitId = await mediator.Send(command, ct);
 
         // 创建响应对象，包含新创建的组织单位信息
         var response = new CreateOrganizationUnitResponse(

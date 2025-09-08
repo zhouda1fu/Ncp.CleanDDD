@@ -14,21 +14,9 @@ namespace Ncp.CleanDDD.Web.Endpoints.RoleEndpoints;
 /// 该端点用于查询系统中的所有角色信息，支持分页和筛选
 /// </summary>
 [Tags("Roles")] // API文档标签，用于Swagger文档分组
-public class GetAllRoleEndpoint : Endpoint<RoleQueryInput, ResponseData<PagedData<RoleQueryDto>?>>
+public class GetAllRoleEndpoint(RoleQuery roleQuery) : Endpoint<RoleQueryInput, ResponseData<PagedData<RoleQueryDto>?>>
 {
-    /// <summary>
-    /// 角色查询服务，用于执行角色相关的查询操作
-    /// </summary>
-    private readonly RoleQuery _roleQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取角色查询服务实例
-    /// </summary>
-    /// <param name="roleQuery">角色查询服务实例</param>
-    public GetAllRoleEndpoint(RoleQuery roleQuery)
-    {
-        _roleQuery = roleQuery;
-    }
+  
 
     /// <summary>
     /// 配置端点的基本设置
@@ -60,7 +48,7 @@ public class GetAllRoleEndpoint : Endpoint<RoleQueryInput, ResponseData<PagedDat
     {
         // 通过查询服务获取所有角色信息
         // 如果查询失败则抛出已知异常
-        var roleInfo = await _roleQuery.GetAllRolesAsync(req, ct) ?? throw new KnownException("Invalid Credentials.");
+        var roleInfo = await roleQuery.GetAllRolesAsync(req, ct) ?? throw new KnownException("Invalid Credentials.");
         
         // 返回成功响应，使用统一的响应数据格式包装
         await Send.OkAsync(roleInfo.AsResponseData(), cancellation: ct);

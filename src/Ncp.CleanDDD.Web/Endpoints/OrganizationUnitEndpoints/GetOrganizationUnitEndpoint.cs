@@ -30,21 +30,8 @@ public record GetOrganizationUnitResponse(OrganizationUnitId Id, string Name, st
 /// 该端点用于根据ID查询特定组织单位的详细信息
 /// </summary>
 [Tags("OrganizationUnits")] // API文档标签，用于Swagger文档分组
-public class GetOrganizationUnitEndpoint : Endpoint<GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse?>>
+public class GetOrganizationUnitEndpoint(OrganizationUnitQuery organizationUnitQuery) : Endpoint<GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse?>>
 {
-    /// <summary>
-    /// 组织单位查询服务，用于执行组织单位相关的查询操作
-    /// </summary>
-    private readonly OrganizationUnitQuery _organizationUnitQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取组织单位查询服务实例
-    /// </summary>
-    /// <param name="organizationUnitQuery">组织单位查询服务实例</param>
-    public GetOrganizationUnitEndpoint(OrganizationUnitQuery organizationUnitQuery)
-    {
-        _organizationUnitQuery = organizationUnitQuery;
-    }
 
     /// <summary>
     /// 配置端点的基本设置
@@ -73,7 +60,7 @@ public class GetOrganizationUnitEndpoint : Endpoint<GetOrganizationUnitRequest, 
         
         // 通过查询服务获取组织单位详细信息
         // 如果不存在则抛出已知异常
-        var organizationUnit = await _organizationUnitQuery.GetOrganizationUnitByIdAsync(request.OrganizationUnitId, ct) ?? 
+        var organizationUnit = await organizationUnitQuery.GetOrganizationUnitByIdAsync(request.OrganizationUnitId, ct) ?? 
                                throw new KnownException("组织架构不存在");
         
         // 创建响应对象，包含组织单位的详细信息

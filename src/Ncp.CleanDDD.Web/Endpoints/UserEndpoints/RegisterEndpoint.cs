@@ -37,30 +37,11 @@ public record RegisterResponse(UserId UserId, string Name, string Email);
 /// 用户注册的API端点
 /// 该端点用于在系统中创建新的用户账户，支持角色分配和组织单位设置
 /// </summary>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
+/// <param name="roleQuery">角色查询服务，用于执行角色相关的查询操作</param>
 [Tags("Users")] // API文档标签，用于Swagger文档分组
-public class RegisterEndpoint : Endpoint<RegisterRequest, ResponseData<RegisterResponse>>
+public class RegisterEndpoint(IMediator mediator, RoleQuery roleQuery) : Endpoint<RegisterRequest, ResponseData<RegisterResponse>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-    
-    /// <summary>
-    /// 角色查询服务，用于执行角色相关的查询操作
-    /// </summary>
-    private readonly RoleQuery _roleQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取中介者和角色查询服务实例
-    /// </summary>
-    /// <param name="mediator">中介者接口实例</param>
-    /// <param name="roleQuery">角色查询服务实例</param>
-    public RegisterEndpoint(IMediator mediator, RoleQuery roleQuery)
-    {
-        _mediator = mediator;
-        _roleQuery = roleQuery;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、认证方案、权限要求等
@@ -85,7 +66,7 @@ public class RegisterEndpoint : Endpoint<RegisterRequest, ResponseData<RegisterR
     {
         // 通过角色查询服务验证要分配的角色信息
         // 确保角色存在且可用于分配
-        var rolesToBeAssigned = await _roleQuery.GetAdminRolesForAssignmentAsync(request.RoleIds, ct);
+        var rolesToBeAssigned = await roleQuery.GetAdminRolesForAssignmentAsync(request.RoleIds, ct);
 
         // 对用户密码进行哈希处理，确保安全性
         var passwordHash = PasswordHasher.HashPassword(request.Password);
@@ -107,7 +88,7 @@ public class RegisterEndpoint : Endpoint<RegisterRequest, ResponseData<RegisterR
         
         // 通过中介者发送命令，执行实际的用户创建业务逻辑
         // 返回新创建的用户ID
-        var userId = await _mediator.Send(cmd, ct);
+        var userId = await mediator.Send(cmd, ct);
         
         // 创建响应对象，包含新创建的用户信息
         var response = new RegisterResponse(

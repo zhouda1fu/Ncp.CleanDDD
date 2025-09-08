@@ -21,24 +21,10 @@ public record UpdateRoleInfoRequest(RoleId RoleId, string Name, string Descripti
 /// 更新角色信息的API端点
 /// 该端点用于修改现有角色的基本信息和权限分配
 /// </summary>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
 [Tags("Roles")] // API文档标签，用于Swagger文档分组
-public class UpdateRoleEndpoint : Endpoint<UpdateRoleInfoRequest, ResponseData<bool>>
+public class UpdateRoleEndpoint(IMediator mediator) : Endpoint<UpdateRoleInfoRequest, ResponseData<bool>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取中介者实例
-    /// </summary>
-    /// <param name="roleQuery">角色查询服务实例（当前未使用）</param>
-    /// <param name="mediator">中介者接口实例</param>
-    public UpdateRoleEndpoint(RoleQuery roleQuery, IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、认证方案、权限要求等
@@ -73,7 +59,7 @@ public class UpdateRoleEndpoint : Endpoint<UpdateRoleInfoRequest, ResponseData<b
         );
         
         // 通过中介者发送命令，执行实际的更新业务逻辑
-        await _mediator.Send(cmd, ct);
+        await mediator.Send(cmd, ct);
         
         // 返回成功响应，表示更新操作完成
         await Send.OkAsync(true.AsResponseData(), cancellation: ct);

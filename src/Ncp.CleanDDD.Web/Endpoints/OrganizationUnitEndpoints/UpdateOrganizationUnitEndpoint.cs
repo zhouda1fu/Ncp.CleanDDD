@@ -22,23 +22,10 @@ public record UpdateOrganizationUnitRequest(OrganizationUnitId Id, string Name, 
 /// 更新组织单位的API端点
 /// 该端点用于修改现有组织单位的基本信息
 /// </summary>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
 [Tags("OrganizationUnits")] // API文档标签，用于Swagger文档分组
-public class UpdateOrganizationUnitEndpoint : Endpoint<UpdateOrganizationUnitRequest, ResponseData<bool>>
+public class UpdateOrganizationUnitEndpoint(IMediator mediator) : Endpoint<UpdateOrganizationUnitRequest, ResponseData<bool>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取中介者实例
-    /// </summary>
-    /// <param name="mediator">中介者接口实例</param>
-    public UpdateOrganizationUnitEndpoint(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、认证方案、权限要求等
@@ -75,7 +62,7 @@ public class UpdateOrganizationUnitEndpoint : Endpoint<UpdateOrganizationUnitReq
         );
 
         // 通过中介者发送命令，执行实际的更新业务逻辑
-        await _mediator.Send(command, ct);
+        await mediator.Send(command, ct);
         
         // 返回成功响应，表示更新操作完成
         await Send.OkAsync(true.AsResponseData(), cancellation: ct);

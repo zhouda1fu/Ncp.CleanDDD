@@ -21,23 +21,10 @@ public record DeleteUserRequest(UserId UserId);
 /// 删除用户的API端点
 /// 该端点用于从系统中删除指定的用户账户
 /// </summary>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
 [Tags("Users")] // API文档标签，用于Swagger文档分组
-public class DeleteUserEndpoint : Endpoint<DeleteUserRequest, ResponseData<bool>>
+public class DeleteUserEndpoint(IMediator mediator) : Endpoint<DeleteUserRequest, ResponseData<bool>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取中介者实例
-    /// </summary>
-    /// <param name="mediator">中介者接口实例</param>
-    public DeleteUserEndpoint(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、认证方案、权限要求等
@@ -46,10 +33,10 @@ public class DeleteUserEndpoint : Endpoint<DeleteUserRequest, ResponseData<bool>
     {
         // 设置HTTP DELETE方法，用于删除用户
         Delete("/api/users/{userId}");
-        
+
         // 设置JWT Bearer认证方案，要求用户必须提供有效的JWT令牌
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
-        
+
         // 设置权限要求：用户必须同时拥有API访问权限和用户删除权限
         Permissions(PermissionCodes.AllApiAccess, PermissionCodes.UserDelete);
     }
@@ -70,7 +57,7 @@ public class DeleteUserEndpoint : Endpoint<DeleteUserRequest, ResponseData<bool>
         var command = new DeleteUserCommand(userId);
         
         // 通过中介者发送命令，执行实际的删除业务逻辑
-        await _mediator.Send(command, ct);
+        await mediator.Send(command, ct);
         
         // 返回成功响应，表示删除操作完成
         await Send.OkAsync(true.AsResponseData(), cancellation: ct);

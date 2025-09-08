@@ -35,50 +35,13 @@ public record RefreshTokenResponse(
 /// 刷新令牌的API端点
 /// 该端点用于刷新用户的访问令牌，延长会话有效期
 /// </summary>
-public class RefreshTokenEndpoint : Endpoint<RefreshTokenRequest, ResponseData<RefreshTokenResponse>>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
+/// <param name="userQuery">用户查询服务，用于执行用户相关的查询操作</param>
+/// <param name="jwtProvider">JWT提供者，用于生成JWT令牌</param>
+/// <param name="appConfiguration">应用配置选项，包含令牌过期时间等设置</param>
+/// <param name="roleQuery">角色查询服务，用于执行角色相关的查询操作</param>
+public class RefreshTokenEndpoint(IMediator mediator, UserQuery userQuery, IJwtProvider jwtProvider, IOptions<AppConfiguration> appConfiguration, RoleQuery roleQuery) : Endpoint<RefreshTokenRequest, ResponseData<RefreshTokenResponse>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-    
-    /// <summary>
-    /// 用户查询服务，用于执行用户相关的查询操作
-    /// </summary>
-    private readonly UserQuery _userQuery;
-    
-    /// <summary>
-    /// JWT提供者，用于生成JWT令牌
-    /// </summary>
-    private readonly IJwtProvider _jwtProvider;
-    
-    /// <summary>
-    /// 应用配置选项，包含令牌过期时间等设置
-    /// </summary>
-    private readonly IOptions<AppConfiguration> _appConfiguration;
-    
-    /// <summary>
-    /// 角色查询服务，用于执行角色相关的查询操作
-    /// </summary>
-    private readonly RoleQuery _roleQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取所需的服务实例
-    /// </summary>
-    /// <param name="mediator">中介者接口实例</param>
-    /// <param name="userQuery">用户查询服务实例</param>
-    /// <param name="jwtProvider">JWT提供者实例</param>
-    /// <param name="appConfiguration">应用配置选项</param>
-    /// <param name="roleQuery">角色查询服务实例</param>
-    public RefreshTokenEndpoint(IMediator mediator, UserQuery userQuery, IJwtProvider jwtProvider, IOptions<AppConfiguration> appConfiguration, RoleQuery roleQuery)
-    {
-        _mediator = mediator;
-        _userQuery = userQuery;
-        _jwtProvider = jwtProvider;
-        _appConfiguration = appConfiguration;
-        _roleQuery = roleQuery;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、标签和访问权限等
@@ -105,23 +68,23 @@ public class RefreshTokenEndpoint : Endpoint<RefreshTokenRequest, ResponseData<R
     public override async Task HandleAsync(RefreshTokenRequest req, CancellationToken ct)
     {
         // 第一步：通过刷新令牌查询用户ID，验证令牌有效性
-        var userId = await _userQuery.GetUserIdByRefreshTokenAsync(req.RefreshToken, ct) ?? throw new KnownException("无效的刷新令牌");
+        var userId = await userQuery.GetUserIdByRefreshTokenAsync(req.RefreshToken, ct) ?? throw new KnownException("无效的刷新令牌");
 
         // 第二步：根据用户ID获取用户登录信息
-        var loginInfo = await _userQuery.GetUserInfoForLoginByIdAsync(userId, ct) ?? throw new KnownException("无效的用户");
+        var loginInfo = await userQuery.GetUserInfoForLoginByIdAsync(userId, ct) ?? throw new KnownException("无效的用户");
 
         // 第三步：生成新的刷新令牌
         var refreshToken = TokenGenerator.GenerateRefreshToken();
         
         // 获取当前时间和计算令牌过期时间
         var nowTime = DateTimeOffset.Now;
-        var tokenExpiryTime = nowTime.AddMinutes(_appConfiguration.Value.TokenExpiryInMinutes);
+        var tokenExpiryTime = nowTime.AddMinutes(appConfiguration.Value.TokenExpiryInMinutes);
         
         // 获取用户的角色列表
         var roles = loginInfo.UserRoles.Select(r => r.RoleId).ToList();
         
         // 根据角色获取分配的权限代码
-        var assignedPermissionCode = await _roleQuery.GetAssignedPermissionCodesAsync(roles, ct);
+        var assignedPermissionCode = await roleQuery.GetAssignedPermissionCodesAsync(roles, ct);
         
         // 创建JWT声明列表，包含用户基本信息
         var claims = new List<Claim>
@@ -142,7 +105,7 @@ public class RefreshTokenEndpoint : Endpoint<RefreshTokenRequest, ResponseData<R
         }
 
         // 使用 FastEndpoints 的 JWT 生成方式创建新的访问令牌
-        var token = await _jwtProvider.GenerateJwtToken(new JwtData("issuer-x", "audience-y", claims, nowTime.UtcDateTime, tokenExpiryTime.UtcDateTime), ct);
+        var token = await jwtProvider.GenerateJwtToken(new JwtData("issuer-x", "audience-y", claims, nowTime.UtcDateTime, tokenExpiryTime.UtcDateTime), ct);
 
         // 创建响应对象，包含新的令牌和用户信息
         var response = new RefreshTokenResponse(
@@ -157,7 +120,7 @@ public class RefreshTokenEndpoint : Endpoint<RefreshTokenRequest, ResponseData<R
 
         // 更新用户登录时间和刷新令牌
         var updateCmd = new UpdateUserLoginTimeCommand(loginInfo.UserId, DateTimeOffset.UtcNow, refreshToken);
-        await _mediator.Send(updateCmd, ct);
+        await mediator.Send(updateCmd, ct);
 
         // 返回成功响应，使用统一的响应数据格式包装
         await Send.OkAsync(response.AsResponseData(), cancellation: ct);

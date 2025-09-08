@@ -36,50 +36,13 @@ public record LoginResponse(string Token, string RefreshToken, UserId UserId, st
 /// 用户登录的API端点
 /// 该端点用于验证用户凭据，生成JWT令牌和刷新令牌，并更新用户登录信息
 /// </summary>
-public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
+/// <param name="userQuery">用户查询服务，用于执行用户相关的查询操作</param>
+/// <param name="jwtProvider">JWT提供者，用于生成JWT令牌</param>
+/// <param name="appConfiguration">应用配置选项，包含令牌过期时间等设置</param>
+/// <param name="roleQuery">角色查询服务，用于执行角色相关的查询操作</param>
+public class LoginEndpoint(IMediator mediator, UserQuery userQuery, IJwtProvider jwtProvider, IOptions<AppConfiguration> appConfiguration, RoleQuery roleQuery) : Endpoint<LoginRequest, ResponseData<LoginResponse>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-    
-    /// <summary>
-    /// 用户查询服务，用于执行用户相关的查询操作
-    /// </summary>
-    private readonly UserQuery _userQuery;
-    
-    /// <summary>
-    /// JWT提供者，用于生成JWT令牌
-    /// </summary>
-    private readonly IJwtProvider _jwtProvider;
-    
-    /// <summary>
-    /// 应用配置选项，包含令牌过期时间等设置
-    /// </summary>
-    private readonly IOptions<AppConfiguration> _appConfiguration;
-    
-    /// <summary>
-    /// 角色查询服务，用于执行角色相关的查询操作
-    /// </summary>
-    private readonly RoleQuery _roleQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取所需的服务实例
-    /// </summary>
-    /// <param name="mediator">中介者接口实例</param>
-    /// <param name="userQuery">用户查询服务实例</param>
-    /// <param name="jwtProvider">JWT提供者实例</param>
-    /// <param name="appConfiguration">应用配置选项</param>
-    /// <param name="roleQuery">角色查询服务实例</param>
-    public LoginEndpoint(IMediator mediator, UserQuery userQuery, IJwtProvider jwtProvider, IOptions<AppConfiguration> appConfiguration, RoleQuery roleQuery)
-    {
-        _mediator = mediator;
-        _userQuery = userQuery;
-        _jwtProvider = jwtProvider;
-        _appConfiguration = appConfiguration;
-        _roleQuery = roleQuery;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、标签和访问权限等
@@ -106,7 +69,7 @@ public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
     public override async Task HandleAsync(LoginRequest req, CancellationToken ct)
     {
         // 第一步：查询并验证用户凭据
-        var loginInfo = await _userQuery.GetUserInfoForLoginAsync(req.Username, ct) ?? throw new KnownException("无效的用户");
+        var loginInfo = await userQuery.GetUserInfoForLoginAsync(req.Username, ct) ?? throw new KnownException("无效的用户");
         
         // 验证密码哈希是否匹配
         if (!PasswordHasher.VerifyHashedPassword(req.Password, loginInfo.PasswordHash))
@@ -115,13 +78,13 @@ public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
         // 第二步：生成JWT令牌和刷新令牌
         var refreshToken = TokenGenerator.GenerateRefreshToken();
         var nowTime = DateTimeOffset.Now;
-        var tokenExpiryTime = nowTime.AddMinutes(_appConfiguration.Value.TokenExpiryInMinutes);
+        var tokenExpiryTime = nowTime.AddMinutes(appConfiguration.Value.TokenExpiryInMinutes);
         
         // 获取用户的角色列表
         var roles = loginInfo.UserRoles.Select(r => r.RoleId).ToList();
         
         // 根据角色获取分配的权限代码
-        var assignedPermissionCode = await _roleQuery.GetAssignedPermissionCodesAsync(roles, ct);
+        var assignedPermissionCode = await roleQuery.GetAssignedPermissionCodesAsync(roles, ct);
         
         // 创建JWT声明列表，包含用户基本信息和权限
         var claims = new List<Claim>
@@ -142,7 +105,7 @@ public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
         }
 
         // 使用 FastEndpoints 的 JWT 生成方式创建访问令牌
-        var token = await _jwtProvider.GenerateJwtToken(new JwtData("issuer-x", "audience-y", claims, nowTime.UtcDateTime, tokenExpiryTime.UtcDateTime), ct);
+        var token = await jwtProvider.GenerateJwtToken(new JwtData("issuer-x", "audience-y", claims, nowTime.UtcDateTime, tokenExpiryTime.UtcDateTime), ct);
 
         // 创建登录响应对象，包含令牌和用户信息
         var response = new LoginResponse(
@@ -157,7 +120,7 @@ public class LoginEndpoint : Endpoint<LoginRequest, ResponseData<LoginResponse>>
 
         // 更新用户登录时间和刷新令牌
         var updateCmd = new UpdateUserLoginTimeCommand(loginInfo.UserId, DateTimeOffset.UtcNow, refreshToken);
-        await _mediator.Send(updateCmd, ct);
+        await mediator.Send(updateCmd, ct);
 
         // 返回成功响应，使用统一的响应数据格式包装
         await Send.OkAsync(response.AsResponseData(), cancellation: ct);

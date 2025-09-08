@@ -37,21 +37,9 @@ public record UserProfileResponse(UserId UserId, string Name, string Phone, IEnu
 /// 该端点用于根据用户ID查询用户的详细资料信息，包括基本信息、角色、状态和组织单位等
 /// </summary>
 [Tags("Users")] // API文档标签，用于Swagger文档分组
-public class GetUserProfileEndpoint : Endpoint<GetUserProfileRequest, ResponseData<UserProfileResponse?>>
+public class GetUserProfileEndpoint(UserQuery userQuery) : Endpoint<GetUserProfileRequest, ResponseData<UserProfileResponse?>>
 {
-    /// <summary>
-    /// 用户查询服务，用于执行用户相关的查询操作
-    /// </summary>
-    private readonly UserQuery _userQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取用户查询服务实例
-    /// </summary>
-    /// <param name="userQuery">用户查询服务实例</param>
-    public GetUserProfileEndpoint(UserQuery userQuery)
-    {
-        _userQuery = userQuery;
-    }
+    
 
     /// <summary>
     /// 配置端点的基本设置
@@ -79,7 +67,7 @@ public class GetUserProfileEndpoint : Endpoint<GetUserProfileRequest, ResponseDa
     public override async Task HandleAsync(GetUserProfileRequest req, CancellationToken ct)
     {
         // 通过查询服务获取用户详细信息
-        var userInfo = await _userQuery.GetUserByIdAsync(req.UserId, ct);
+        var userInfo = await userQuery.GetUserByIdAsync(req.UserId, ct);
 
         // 验证用户是否存在，如果不存在则抛出异常
         if (userInfo == null)

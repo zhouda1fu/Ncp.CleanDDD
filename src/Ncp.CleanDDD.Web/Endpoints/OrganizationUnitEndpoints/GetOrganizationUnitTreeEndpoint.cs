@@ -17,21 +17,9 @@ public record GetOrganizationUnitTreeRequest(bool IncludeInactive = false);
 /// 该端点用于查询组织单位的层级树形结构，便于前端展示组织架构
 /// </summary>
 [Tags("OrganizationUnits")] // API文档标签，用于Swagger文档分组
-public class GetOrganizationUnitTreeEndpoint : Endpoint<GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>?>>
+public class GetOrganizationUnitTreeEndpoint(OrganizationUnitQuery organizationUnitQuery) : Endpoint<GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>?>>
 {
-    /// <summary>
-    /// 组织单位查询服务，用于执行组织单位相关的查询操作
-    /// </summary>
-    private readonly OrganizationUnitQuery _organizationUnitQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取组织单位查询服务实例
-    /// </summary>
-    /// <param name="organizationUnitQuery">组织单位查询服务实例</param>
-    public GetOrganizationUnitTreeEndpoint(OrganizationUnitQuery organizationUnitQuery)
-    {
-        _organizationUnitQuery = organizationUnitQuery;
-    }
+   
 
     /// <summary>
     /// 配置端点的基本设置
@@ -60,7 +48,7 @@ public class GetOrganizationUnitTreeEndpoint : Endpoint<GetOrganizationUnitTreeR
     {
         // 通过查询服务获取组织单位树形结构
         // 根据请求参数决定是否包含非激活状态的组织单位
-        var organizationUnitTree = await _organizationUnitQuery.GetOrganizationUnitTreeAsync(req.IncludeInactive, ct);
+        var organizationUnitTree = await organizationUnitQuery.GetOrganizationUnitTreeAsync(req.IncludeInactive, ct);
         
         // 返回成功响应，使用统一的响应数据格式包装
         await Send.OkAsync(organizationUnitTree.AsResponseData(), cancellation: ct);

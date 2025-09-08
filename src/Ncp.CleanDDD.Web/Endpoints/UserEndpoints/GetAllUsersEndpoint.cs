@@ -9,21 +9,9 @@ namespace Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 /// 获取所有用户信息的API端点
 /// 该端点用于查询系统中的所有用户信息，支持分页、筛选和搜索
 /// </summary>
-public class GetAllUsersEndpoint : Endpoint<UserQueryInput, ResponseData<PagedData<UserInfoQueryDto>>>
+public class GetAllUsersEndpoint(UserQuery userQuery) : Endpoint<UserQueryInput, ResponseData<PagedData<UserInfoQueryDto>>>
 {
-    /// <summary>
-    /// 用户查询服务，用于执行用户相关的查询操作
-    /// </summary>
-    private readonly UserQuery _userQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取用户查询服务实例
-    /// </summary>
-    /// <param name="userQuery">用户查询服务实例</param>
-    public GetAllUsersEndpoint(UserQuery userQuery)
-    {
-        _userQuery = userQuery;
-    }
+   
 
     /// <summary>
     /// 配置端点的基本设置
@@ -57,7 +45,7 @@ public class GetAllUsersEndpoint : Endpoint<UserQueryInput, ResponseData<PagedDa
     public override async Task HandleAsync(UserQueryInput req, CancellationToken ct)
     {
         // 通过查询服务获取所有用户信息，支持分页和筛选
-        var result = await _userQuery.GetAllUsersAsync(req, ct);
+        var result = await userQuery.GetAllUsersAsync(req, ct);
         
         // 返回成功响应，使用统一的响应数据格式包装
         await Send.OkAsync(result.AsResponseData(), cancellation: ct);

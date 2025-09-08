@@ -28,21 +28,8 @@ public record GetRoleResponse(RoleId Id, string Name, string Description, bool I
 /// 该端点用于根据ID查询特定角色的详细信息
 /// </summary>
 [Tags("Roles")] // API文档标签，用于Swagger文档分组
-public class GetRoleEndpoint : Endpoint<GetRoleRequest, ResponseData<GetRoleResponse?>>
+public class GetRoleEndpoint(RoleQuery roleQuery) : Endpoint<GetRoleRequest, ResponseData<GetRoleResponse?>>
 {
-    /// <summary>
-    /// 角色查询服务，用于执行角色相关的查询操作
-    /// </summary>
-    private readonly RoleQuery _roleQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取角色查询服务实例
-    /// </summary>
-    /// <param name="roleQuery">角色查询服务实例</param>
-    public GetRoleEndpoint(RoleQuery roleQuery)
-    {
-        _roleQuery = roleQuery;
-    }
 
     /// <summary>
     /// 配置端点的基本设置
@@ -71,7 +58,7 @@ public class GetRoleEndpoint : Endpoint<GetRoleRequest, ResponseData<GetRoleResp
     {
         // 通过查询服务获取角色详细信息
         // 如果角色不存在则抛出已知异常
-        var roleInfo = await _roleQuery.GetRoleByIdAsync(req.RoleId, ct) ?? throw new KnownException("Invalid Credentials.");
+        var roleInfo = await roleQuery.GetRoleByIdAsync(req.RoleId, ct) ?? throw new KnownException("Invalid Credentials.");
         
         // 创建响应对象，包含角色的详细信息
         var response = new GetRoleResponse(

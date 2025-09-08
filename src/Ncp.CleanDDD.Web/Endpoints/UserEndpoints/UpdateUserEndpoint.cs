@@ -39,30 +39,11 @@ public record UpdateUserResponse(UserId UserId, string Name, string Email);
 /// 更新用户信息的API端点
 /// 该端点用于修改现有用户的基本信息，包括个人信息、组织单位和密码
 /// </summary>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
+/// <param name="roleQuery">角色查询服务，用于执行角色相关的查询操作</param>
 [Tags("Users")] // API文档标签，用于Swagger文档分组
-public class UpdateUserEndpoint : Endpoint<UpdateUserRequest, ResponseData<UpdateUserResponse>>
+public class UpdateUserEndpoint(IMediator mediator, RoleQuery roleQuery) : Endpoint<UpdateUserRequest, ResponseData<UpdateUserResponse>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-    
-    /// <summary>
-    /// 角色查询服务，用于执行角色相关的查询操作
-    /// </summary>
-    private readonly RoleQuery _roleQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取中介者和角色查询服务实例
-    /// </summary>
-    /// <param name="mediator">中介者接口实例</param>
-    /// <param name="roleQuery">角色查询服务实例</param>
-    public UpdateUserEndpoint(IMediator mediator, RoleQuery roleQuery)
-    {
-        _mediator = mediator;
-        _roleQuery = roleQuery;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、认证方案、权限要求等
@@ -116,7 +97,7 @@ public class UpdateUserEndpoint : Endpoint<UpdateUserRequest, ResponseData<Updat
         
         // 通过中介者发送命令，执行实际的更新业务逻辑
         // 返回更新后的用户ID
-        var userId = await _mediator.Send(cmd, ct);
+        var userId = await mediator.Send(cmd, ct);
         
         // 创建响应对象，包含更新后的用户信息
         var response = new UpdateUserResponse(

@@ -26,30 +26,11 @@ public record UpdateUserRolesResponse(UserId UserId);
 /// 更新用户角色的API端点
 /// 该端点用于修改指定用户的角色分配，支持批量角色分配
 /// </summary>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
+/// <param name="roleQuery">角色查询服务，用于执行角色相关的查询操作</param>
 [Tags("Users")] // API文档标签，用于Swagger文档分组
-public class UpdateUserRolesEndpoint : Endpoint<UpdateUserRolesRequest, ResponseData<UpdateUserRolesResponse>>
+public class UpdateUserRolesEndpoint(IMediator mediator, RoleQuery roleQuery) : Endpoint<UpdateUserRolesRequest, ResponseData<UpdateUserRolesResponse>>
 {
-    /// <summary>
-    /// 中介者模式接口，用于处理命令和查询
-    /// </summary>
-    private readonly IMediator _mediator;
-    
-    /// <summary>
-    /// 角色查询服务，用于执行角色相关的查询操作
-    /// </summary>
-    private readonly RoleQuery _roleQuery;
-
-    /// <summary>
-    /// 构造函数，通过依赖注入获取中介者和角色查询服务实例
-    /// </summary>
-    /// <param name="mediator">中介者接口实例</param>
-    /// <param name="roleQuery">角色查询服务实例</param>
-    public UpdateUserRolesEndpoint(IMediator mediator, RoleQuery roleQuery)
-    {
-        _mediator = mediator;
-        _roleQuery = roleQuery;
-    }
-
     /// <summary>
     /// 配置端点的基本设置
     /// 包括HTTP方法、认证方案、权限要求等
@@ -77,13 +58,13 @@ public class UpdateUserRolesEndpoint : Endpoint<UpdateUserRolesRequest, Response
     {
         // 通过角色查询服务验证要分配的角色信息
         // 确保角色存在且可用于分配
-        var rolesToBeAssigned = await _roleQuery.GetAdminRolesForAssignmentAsync(request.RoleIds, ct);
+        var rolesToBeAssigned = await roleQuery.GetAdminRolesForAssignmentAsync(request.RoleIds, ct);
 
         // 创建更新用户角色命令对象
         var cmd = new UpdateUserRolesCommand(request.UserId, rolesToBeAssigned);
         
         // 通过中介者发送命令，执行实际的角色分配业务逻辑
-        await _mediator.Send(cmd, ct);
+        await mediator.Send(cmd, ct);
         
         // 创建响应对象，包含已更新角色的用户ID
         var response = new UpdateUserRolesResponse(request.UserId);

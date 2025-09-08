@@ -18,8 +18,11 @@ namespace Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 /// <summary>
 /// 批量导入用户端点
 /// </summary>
+/// <param name="mediator">中介者模式接口，用于处理命令和查询</param>
+/// <param name="roleQuery">角色查询服务，用于执行角色相关的查询操作</param>
+/// <param name="userQuery">用户查询服务，用于执行用户相关的查询操作</param>
 [Tags("Users")]
-public class BatchImportUsersEndpoint : Endpoint<BatchImportUsersRequest, ResponseData<BatchImportUsersResponse>>
+public class BatchImportUsersEndpoint(IMediator mediator, RoleQuery roleQuery, UserQuery userQuery) : Endpoint<BatchImportUsersRequest, ResponseData<BatchImportUsersResponse>>
 {
     // 常量定义
     private const int MaxFileSize = 10 * 1024 * 1024; // 10MB
@@ -43,16 +46,6 @@ public class BatchImportUsersEndpoint : Endpoint<BatchImportUsersRequest, Respon
         public const int BirthDate = 7;   // H列：出生日期
     }
 
-    private readonly IMediator _mediator;
-    private readonly RoleQuery _roleQuery;
-    private readonly UserQuery _userQuery;
-
-    public BatchImportUsersEndpoint(IMediator mediator, RoleQuery roleQuery, UserQuery userQuery)
-    {
-        _mediator = mediator;
-        _roleQuery = roleQuery;
-        _userQuery = userQuery;
-    }
 
     public override void Configure()
     {
@@ -243,8 +236,8 @@ public class BatchImportUsersEndpoint : Endpoint<BatchImportUsersRequest, Respon
                 try
                 {
                     // 并行检查用户名、邮箱和ID是否已存在
-                    var userExistsTask = _userQuery.DoesUserExist(userData.Name, ct);
-                   // var idNoExistsTask = _userQuery.DoesIdNoExist(userData.IdNo, ct);
+                    var userExistsTask = userQuery.DoesUserExist(userData.Name, ct);
+                   // var idNoExistsTask = userQuery.DoesIdNoExist(userData.IdNo, ct);
 
                     await Task.WhenAll(userExistsTask);
 
@@ -257,7 +250,7 @@ public class BatchImportUsersEndpoint : Endpoint<BatchImportUsersRequest, Respon
                     // 邮箱检查（可选）
                     if (!string.IsNullOrWhiteSpace(userData.Email))
                     {
-                        if (await _userQuery.DoesEmailExist(userData.Email, ct))
+                        if (await userQuery.DoesEmailExist(userData.Email, ct))
                             errors.Add($"邮箱'{userData.Email}'已存在");
                     }
                 }
@@ -403,7 +396,7 @@ public class BatchImportUsersEndpoint : Endpoint<BatchImportUsersRequest, Respon
         var passwordHash = PasswordHasher.HashPassword(DefaultPassword);
 
         // 处理角色分配
-        var rolesToBeAssigned = await _roleQuery.GetAdminRolesForAssignmentAsync(roleIds, ct);
+        var rolesToBeAssigned = await roleQuery.GetAdminRolesForAssignmentAsync(roleIds, ct);
 
         var cmd = new CreateUserCommand(
             userData.Name,
@@ -419,7 +412,7 @@ public class BatchImportUsersEndpoint : Endpoint<BatchImportUsersRequest, Respon
             rolesToBeAssigned
         );
 
-        await _mediator.Send(cmd, ct);
+        await mediator.Send(cmd, ct);
     }
 
     /// <summary>
