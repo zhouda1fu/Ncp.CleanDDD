@@ -59,8 +59,8 @@ export const organizationApi = {
     api.post<{ id: number; message: string }>('/organization-units', data),
 
   // 更新组织架构
-  update: (id: number, data: Omit<UpdateOrganizationUnitRequest, 'id'>) => 
-    api.put<{ message: string }>(`/organization-units/${id}`, data),
+  update: (data: UpdateOrganizationUnitRequest) => 
+    api.put<{ message: string }>(`/organization-units`, data),
 
   // 删除组织架构
   delete: (id: number) => 

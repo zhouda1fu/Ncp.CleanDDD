@@ -3,6 +3,7 @@ using Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate;
 using Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate;
 using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
+using Ncp.CleanDDD.Web.Tests.Base;
 using Ncp.CleanDDD.Web.Tests.Extensions;
 using NetCorePal.Extensions.Dto;
 using Shouldly;
@@ -13,12 +14,8 @@ using FastEndpoints;
 namespace Ncp.CleanDDD.Web.Tests;
 
 [Collection("web")]
-public class UserTests : IDisposable
+public class UserTests : BaseWebTest
 {
-    private readonly HttpClient _client;
-    private string? _authToken;
-    private string? _refreshToken;
-    private UserId? _testUserId;
     private readonly List<UserId> _createdUserIds = [];
 
     // 测试数据常量
@@ -29,26 +26,22 @@ public class UserTests : IDisposable
     private const string TestGender = "男";
     private const int TestAge = 25;
 
-    public UserTests(MyWebApplicationFactory factory)
+    public UserTests(MyWebApplicationFactory factory) : base(factory)
     {
-        _client = factory.WithWebHostBuilder(builder => { builder.ConfigureServices(_ => { }); })
-            .CreateClient();
-
-        // 在构造函数中登录获取token
-        LoginAndGetToken().GetAwaiter().GetResult();
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         // 清理测试过程中创建的用户
         CleanupTestUsers().GetAwaiter().GetResult();
+        base.Dispose();
     }
 
     private async Task CleanupTestUsers()
     {
-        if (_authToken != null)
+        if (AuthToken != null)
         {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
+            SetAuthHeader(true);
 
             foreach (var userId in _createdUserIds)
             {
@@ -57,7 +50,7 @@ public class UserTests : IDisposable
                     var deleteRequest = new DeleteUserRequest(userId);
 
                     // 使用FastEndpoints的强类型扩展方法
-                    await _client.DELETEAsync<DeleteUserEndpoint, DeleteUserRequest, ResponseData<bool>>(deleteRequest);
+                    await Client.DELETEAsync<DeleteUserEndpoint, DeleteUserRequest, ResponseData<bool>>(deleteRequest);
                 }
                 catch
                 {
@@ -67,44 +60,6 @@ public class UserTests : IDisposable
         }
     }
 
-    private async Task LoginAndGetToken()
-    {
-        const string json = $$"""
-                              {
-                                   "username": "{{AppDefaultCredentials.UserName}}",
-                                   "password": "{{AppDefaultCredentials.Password}}"
-                              }
-                              """;
-        var content = new StringContent(json);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var response = await _client.PostAsync("api/user/login", content);
-
-        if (response.IsSuccessStatusCode)
-        {
-            var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<LoginResponse>>();
-            if (responseData?.Data != null)
-            {
-                _authToken = responseData.Data.Token;
-                _refreshToken = responseData.Data.RefreshToken;
-                _testUserId = responseData.Data.UserId;
-
-                // 设置认证头
-                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-            }
-        }
-    }
-
-    private void SetAuthHeader(bool useAuth = true)
-    {
-        if (useAuth && _authToken != null)
-        {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-        }
-        else
-        {
-            _client.DefaultRequestHeaders.Authorization = null;
-        }
-    }
 
     private RegisterRequest CreateTestRegisterRequest(string name, string email, string phone = TestPhone)
     {
@@ -134,7 +89,7 @@ public class UserTests : IDisposable
         var registerRequest = CreateTestRegisterRequest(uniqueName, uniqueEmail);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
+        var (response, result) = await Client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -158,7 +113,7 @@ public class UserTests : IDisposable
         var registerRequest = CreateTestRegisterRequest("admin", "admin2@example.com", "13800138001");
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
+        var (response, result) = await Client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
 
         // Assert - 使用Shouldly断言
         result.ShouldNotBeNull();
@@ -184,7 +139,7 @@ public class UserTests : IDisposable
         };
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetAllUsersEndpoint, UserQueryInput, ResponseData<PagedData<UserInfoQueryDto>>>(queryInput);
+        var (response, result) = await Client.GETAsync<GetAllUsersEndpoint, UserQueryInput, ResponseData<PagedData<UserInfoQueryDto>>>(queryInput);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -215,7 +170,7 @@ public class UserTests : IDisposable
         );
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.PUTAsync<UpdateUserEndpoint, UpdateUserRequest, ResponseData<UpdateUserResponse>>(updateRequest);
+        var (response, result) = await Client.PUTAsync<UpdateUserEndpoint, UpdateUserRequest, ResponseData<UpdateUserResponse>>(updateRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -229,15 +184,15 @@ public class UserTests : IDisposable
     public async Task RefreshToken_ShouldSucceed()
     {
         // Arrange
-        if (_refreshToken == null)
+        if (RefreshToken == null)
         {
             await LoginAndGetToken();
         }
 
-        var refreshRequest = new RefreshTokenRequest(_refreshToken!);
+        var refreshRequest = new RefreshTokenRequest(RefreshToken!);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.POSTAsync<RefreshTokenEndpoint, RefreshTokenRequest, ResponseData<RefreshTokenResponse>>(refreshRequest);
+        var (response, result) = await Client.POSTAsync<RefreshTokenEndpoint, RefreshTokenRequest, ResponseData<RefreshTokenResponse>>(refreshRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -245,7 +200,7 @@ public class UserTests : IDisposable
         result.Data.ShouldNotBeNull();
         result.Data.Token.ShouldNotBeNull();
         result.Data.RefreshToken.ShouldNotBeNull();
-        result.Data.RefreshToken.ShouldNotBe(_refreshToken);
+        result.Data.RefreshToken.ShouldNotBe(RefreshToken);
     }
 
     [Fact, Priority(6)]
@@ -256,7 +211,7 @@ public class UserTests : IDisposable
         var deleteRequest = new DeleteUserRequest(testUserId);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.DELETEAsync<DeleteUserEndpoint,DeleteUserRequest, ResponseData<bool>>(deleteRequest);
+        var (response, result) = await Client.DELETEAsync<DeleteUserEndpoint,DeleteUserRequest, ResponseData<bool>>(deleteRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -273,7 +228,7 @@ public class UserTests : IDisposable
         var uniqueEmail = $"update_user_roles_{Guid.NewGuid():N}@example.com";
         var registerRequest = CreateTestRegisterRequest(uniqueName, uniqueEmail, "13800138003");
 
-        var (registerResponse, registerResult) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
+        var (registerResponse, registerResult) = await Client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
         registerResult.ShouldNotBeNull();
 
         SetAuthHeader(true);
@@ -281,7 +236,7 @@ public class UserTests : IDisposable
         var updateRolesRequest = new UpdateUserRolesRequest(registerResult.Data.UserId, roleIds);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.PUTAsync<UpdateUserRolesEndpoint, UpdateUserRolesRequest, ResponseData<UpdateUserRolesResponse>>(updateRolesRequest);
+        var (response, result) = await Client.PUTAsync<UpdateUserRolesEndpoint, UpdateUserRolesRequest, ResponseData<UpdateUserRolesResponse>>(updateRolesRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -301,7 +256,7 @@ public class UserTests : IDisposable
         var uniqueName = $"profiletest_{Guid.NewGuid():N}";
         var registerRequest = CreateTestRegisterRequest(uniqueName, "profiletest@example.com", "13800138002");
 
-        var (response, result) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
+        var (response, result) = await Client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
 
         result.ShouldNotBeNull();
 
@@ -319,7 +274,7 @@ public class UserTests : IDisposable
         var uniqueName = $"deletetest_{Guid.NewGuid():N}";
         var registerRequest = CreateTestRegisterRequest(uniqueName, "deletetest@example.com", "13800138003");
 
-        var (response, result) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
+        var (response, result) = await Client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
 
         SetAuthHeader(true);
 

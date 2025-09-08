@@ -340,7 +340,8 @@ const submitForm = async () => {
     await formRef.value.validate()
     
     if (editingOrganization.value) {
-      await organizationApi.update(editingOrganization.value.id, {
+      await organizationApi.update({
+        id: editingOrganization.value.id,
         name: form.name,
         description: form.description,
         parentId: form.parentId,

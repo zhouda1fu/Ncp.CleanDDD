@@ -2,6 +2,7 @@ using Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate;
 using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Endpoints.RoleEndpoints;
 using Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
+using Ncp.CleanDDD.Web.Tests.Base;
 using Ncp.CleanDDD.Web.Tests.Extensions;
 using NetCorePal.Extensions.Dto;
 using Shouldly;
@@ -12,11 +13,8 @@ using FastEndpoints;
 namespace Ncp.CleanDDD.Web.Tests;
 
 [Collection("web")]
-public class RoleTests : IDisposable
+public class RoleTests : BaseWebTest
 {
-    private readonly HttpClient _client;
-    private string? _authToken;
-    private string? _refreshToken;
     private readonly List<RoleId> _createdRoleIds = new();
 
     // 测试数据常量
@@ -24,26 +22,22 @@ public class RoleTests : IDisposable
     private const string TestRoleDescription = "这是一个测试角色";
     private readonly string[] TestPermissionCodes = { "test.read", "test.write" };
 
-    public RoleTests(MyWebApplicationFactory factory)
+    public RoleTests(MyWebApplicationFactory factory) : base(factory)
     {
-        _client = factory.WithWebHostBuilder(builder => { builder.ConfigureServices(_ => { }); })
-            .CreateClient();
-
-        // 在构造函数中登录获取token
-        LoginAndGetToken().GetAwaiter().GetResult();
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         // 清理测试过程中创建的角色
         CleanupTestRoles().GetAwaiter().GetResult();
+        base.Dispose();
     }
 
     private async Task CleanupTestRoles()
     {
-        if (_authToken != null)
+        if (AuthToken != null)
         {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
+            SetAuthHeader(true);
             
             foreach (var roleId in _createdRoleIds)
             {
@@ -51,7 +45,7 @@ public class RoleTests : IDisposable
                 {
                     var deleteRequest = new DeleteRoleRequest(roleId);
                     // 使用FastEndpoints的强类型扩展方法
-                    await _client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
+                    await Client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
                 }
                 catch
                 {
@@ -61,43 +55,6 @@ public class RoleTests : IDisposable
         }
     }
 
-    private async Task LoginAndGetToken()
-    {
-        const string json = $$"""
-                              {
-                                   "username": "{{AppDefaultCredentials.UserName}}",
-                                   "password": "{{AppDefaultCredentials.Password}}"
-                              }
-                              """;
-        var content = new StringContent(json);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var response = await _client.PostAsync("api/user/login", content);
-
-        if (response.IsSuccessStatusCode)
-        {
-            var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<LoginResponse>>();
-            if (responseData?.Data != null)
-            {
-                _authToken = responseData.Data.Token;
-                _refreshToken = responseData.Data.RefreshToken;
-
-                // 设置认证头
-                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-            }
-        }
-    }
-
-    private void SetAuthHeader(bool useAuth = true)
-    {
-        if (useAuth && _authToken != null)
-        {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-        }
-        else
-        {
-            _client.DefaultRequestHeaders.Authorization = null;
-        }
-    }
 
     private CreateRoleRequest CreateTestRoleRequest(string? name = null, string? description = null, string[]? permissionCodes = null)
     {
@@ -116,7 +73,7 @@ public class RoleTests : IDisposable
         var createRequest = CreateTestRoleRequest(uniqueName, "创建角色测试描述");
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        var (response, result) = await Client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -135,13 +92,13 @@ public class RoleTests : IDisposable
         var createRequest = CreateTestRoleRequest(roleName);
 
         // 先创建一个角色
-        var (firstResponse, firstResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        var (firstResponse, firstResult) = await Client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
         firstResponse.IsSuccessStatusCode.ShouldBeTrue();
         _createdRoleIds.Add(firstResult!.Data!.RoleId);
 
         // Act - 尝试创建相同名称的角色
         var duplicateRequest = CreateTestRoleRequest(roleName);
-        var (response, result) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(duplicateRequest);
+        var (response, result) = await Client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(duplicateRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -165,7 +122,7 @@ public class RoleTests : IDisposable
         };
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
+        var (response, result) = await Client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -180,7 +137,7 @@ public class RoleTests : IDisposable
         // Arrange
         var testRoleName = $"筛选测试角色_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(testRoleName);
-        var (createResponse, createResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
         _createdRoleIds.Add(createResult!.Data!.RoleId);
 
         // Act - 使用FastEndpoints的强类型扩展方法
@@ -193,7 +150,7 @@ public class RoleTests : IDisposable
             IsActive = null,
             CountTotal = true
         };
-        var (response, result) = await _client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
+        var (response, result) = await Client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -209,13 +166,13 @@ public class RoleTests : IDisposable
         // Arrange - 先创建一个角色
         var testRoleName = $"获取角色测试_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(testRoleName);
-        var (createResponse, createResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
         createResult.ShouldNotBeNull();
         
         var roleId = createResult.Data!.RoleId;
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
+        var (response, result) = await Client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -231,7 +188,7 @@ public class RoleTests : IDisposable
         var invalidRoleId = new RoleId(Guid.NewGuid());
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(invalidRoleId));
+        var (response, result) = await Client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(invalidRoleId));
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -245,7 +202,7 @@ public class RoleTests : IDisposable
         // Arrange - 先创建一个角色
         var originalName = $"更新前角色_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(originalName);
-        var (createResponse, createResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
         createResult.ShouldNotBeNull();
         
         var roleId = createResult.Data!.RoleId;
@@ -260,7 +217,7 @@ public class RoleTests : IDisposable
         );
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
+        var (response, result) = await Client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -268,7 +225,7 @@ public class RoleTests : IDisposable
         result.Data.ShouldBeTrue();
 
         // 验证更新是否成功
-        var (getResponse, getResult) = await _client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
+        var (getResponse, getResult) = await Client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
         getResult.ShouldNotBeNull();
         getResult.Data!.Name.ShouldBe(updatedName);
         getResult.Data.Description.ShouldBe("更新后的描述");
@@ -287,7 +244,7 @@ public class RoleTests : IDisposable
         );
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
+        var (response, result) = await Client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -301,14 +258,14 @@ public class RoleTests : IDisposable
         // Arrange - 先创建一个角色
         var testRoleName = $"待删除角色_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(testRoleName);
-        var (createResponse, createResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
         createResult.ShouldNotBeNull();
         
         var roleId = createResult.Data!.RoleId;
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var deleteRequest = new DeleteRoleRequest(roleId);
-        var (response, result) = await _client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
+        var (response, result) = await Client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -316,7 +273,7 @@ public class RoleTests : IDisposable
         result.Data.ShouldBeTrue();
 
         // 验证角色确实被删除了
-        var (getResponse, getResult) = await _client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
+        var (getResponse, getResult) = await Client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
 
         getResponse.IsSuccessStatusCode.ShouldBeTrue();
         getResult.ShouldNotBeNull();
@@ -333,7 +290,7 @@ public class RoleTests : IDisposable
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var deleteRequest = new DeleteRoleRequest(invalidRoleId);
-        var (response, result) = await _client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
+        var (response, result) = await Client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -349,7 +306,7 @@ public class RoleTests : IDisposable
         var createRequest = CreateTestRoleRequest();
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        var (response, result) = await Client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();
@@ -367,7 +324,7 @@ public class RoleTests : IDisposable
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var queryInput = new RoleQueryInput();
-        var (response, result) = await _client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
+        var (response, result) = await Client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();
@@ -390,7 +347,7 @@ public class RoleTests : IDisposable
         );
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
+        var (response, result) = await Client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();
@@ -409,7 +366,7 @@ public class RoleTests : IDisposable
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var deleteRequest = new DeleteRoleRequest(roleId);
-        var (response, result) = await _client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
+        var (response, result) = await Client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();

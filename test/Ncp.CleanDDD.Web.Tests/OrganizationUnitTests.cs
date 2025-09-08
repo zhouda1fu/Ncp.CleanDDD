@@ -2,6 +2,7 @@ using Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate;
 using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Endpoints.OrganizationUnitEndpoints;
 using Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
+using Ncp.CleanDDD.Web.Tests.Base;
 using Ncp.CleanDDD.Web.Tests.Extensions;
 using NetCorePal.Extensions.Dto;
 using Shouldly;
@@ -12,32 +13,26 @@ using FastEndpoints;
 namespace Ncp.CleanDDD.Web.Tests;
 
 [Collection("web")]
-public class OrganizationUnitTests : IDisposable
+public class OrganizationUnitTests : BaseWebTest
 {
-    private readonly HttpClient _client;
-    private string? _authToken;
     private readonly List<OrganizationUnitId> _createdOrganizationUnitIds = new();
 
-    public OrganizationUnitTests(MyWebApplicationFactory factory)
+    public OrganizationUnitTests(MyWebApplicationFactory factory) : base(factory)
     {
-        _client = factory.WithWebHostBuilder(builder => { builder.ConfigureServices(_ => { }); })
-            .CreateClient();
-
-        // 在构造函数中登录获取token
-        LoginAndGetToken().GetAwaiter().GetResult();
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         // 清理测试过程中创建的组织单位
         CleanupTestOrganizationUnits().GetAwaiter().GetResult();
+        base.Dispose();
     }
 
     private async Task CleanupTestOrganizationUnits()
     {
-        if (_authToken != null)
+        if (AuthToken != null)
         {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
+            SetAuthHeader(true);
             
             foreach (var organizationUnitId in _createdOrganizationUnitIds)
             {
@@ -45,7 +40,7 @@ public class OrganizationUnitTests : IDisposable
                 {
                     var deleteRequest = new DeleteOrganizationUnitRequest(organizationUnitId);
                     // 使用FastEndpoints的强类型扩展方法
-                    await _client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
+                    await Client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
                 }
                 catch
                 {
@@ -55,42 +50,6 @@ public class OrganizationUnitTests : IDisposable
         }
     }
 
-    private async Task LoginAndGetToken()
-    {
-        const string json = $$"""
-                              {
-                                   "username": "{{AppDefaultCredentials.UserName}}",
-                                   "password": "{{AppDefaultCredentials.Password}}"
-                              }
-                              """;
-        var content = new StringContent(json);
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var response = await _client.PostAsync("api/user/login", content);
-
-        if (response.IsSuccessStatusCode)
-        {
-            var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<LoginResponse>>();
-            if (responseData?.Data != null)
-            {
-                _authToken = responseData.Data.Token;
-
-                // 设置认证头
-                _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-            }
-        }
-    }
-
-    private void SetAuthHeader(bool useAuth = true)
-    {
-        if (useAuth && _authToken != null)
-        {
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-        }
-        else
-        {
-            _client.DefaultRequestHeaders.Authorization = null;
-        }
-    }
 
     private CreateOrganizationUnitRequest CreateTestOrganizationUnitRequest(string name, string description, OrganizationUnitId? parentId = null, int sortOrder = 1)
     {
@@ -111,7 +70,7 @@ public class OrganizationUnitTests : IDisposable
         var createRequest = CreateTestOrganizationUnitRequest(uniqueName, description);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        var (response, result) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -131,7 +90,7 @@ public class OrganizationUnitTests : IDisposable
         // 先创建一个父级组织单位
         var parentName = $"父级部门_{Guid.NewGuid():N}";
         var parentRequest = CreateTestOrganizationUnitRequest(parentName, "父级部门描述");
-        var (parentResponse, parentResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(parentRequest);
+        var (parentResponse, parentResult) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(parentRequest);
         parentResult.ShouldNotBeNull();
         _createdOrganizationUnitIds.Add(parentResult.Data.Id);
 
@@ -140,7 +99,7 @@ public class OrganizationUnitTests : IDisposable
         var childRequest = CreateTestOrganizationUnitRequest(childName, "子级部门描述", parentResult.Data.Id, 2);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(childRequest);
+        var (response, result) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(childRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -161,7 +120,7 @@ public class OrganizationUnitTests : IDisposable
         var createRequest = CreateTestOrganizationUnitRequest("未授权测试部门", "测试描述");
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        var (response, result) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();
@@ -184,7 +143,7 @@ public class OrganizationUnitTests : IDisposable
         };
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
+        var (response, result) = await Client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -199,7 +158,7 @@ public class OrganizationUnitTests : IDisposable
         // 先创建一个测试组织单位
         var testName = $"筛选测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(testName, "筛选测试描述");
-        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
         createResult.ShouldNotBeNull();
         _createdOrganizationUnitIds.Add(createResult.Data.Id);
 
@@ -213,7 +172,7 @@ public class OrganizationUnitTests : IDisposable
         };
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
+        var (response, result) = await Client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -229,12 +188,12 @@ public class OrganizationUnitTests : IDisposable
         // 先创建一个测试组织单位
         var testName = $"详情测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(testName, "详情测试描述");
-        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
         createResult.ShouldNotBeNull();
         _createdOrganizationUnitIds.Add(createResult.Data.Id);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(createResult.Data.Id));
+        var (response, result) = await Client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(createResult.Data.Id));
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -252,7 +211,7 @@ public class OrganizationUnitTests : IDisposable
         var nonExistentId = new OrganizationUnitId(99999);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(nonExistentId));
+        var (response, result) = await Client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(nonExistentId));
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -268,7 +227,7 @@ public class OrganizationUnitTests : IDisposable
         // 先创建一个测试组织单位
         var originalName = $"更新测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(originalName, "原始描述");
-        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
         createResult.ShouldNotBeNull();
         _createdOrganizationUnitIds.Add(createResult.Data.Id);
 
@@ -282,7 +241,7 @@ public class OrganizationUnitTests : IDisposable
         );
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
+        var (response, result) = await Client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -290,7 +249,7 @@ public class OrganizationUnitTests : IDisposable
         result.Data.ShouldBeTrue();
 
         // 验证更新是否成功
-        var (getResponse, getResult) = await _client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(createResult.Data.Id));
+        var (getResponse, getResult) = await Client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(createResult.Data.Id));
         getResult.ShouldNotBeNull();
         getResult.Data!.Name.ShouldBe("更新后的部门名称");
         getResult.Data.Description.ShouldBe("更新后的描述");
@@ -309,7 +268,7 @@ public class OrganizationUnitTests : IDisposable
         );
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
+        var (response, result) = await Client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -325,12 +284,12 @@ public class OrganizationUnitTests : IDisposable
         // 先创建一个测试组织单位
         var testName = $"删除测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(testName, "删除测试描述");
-        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
         createResult.ShouldNotBeNull();
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var deleteRequest = new DeleteOrganizationUnitRequest(createResult.Data.Id);
-        var (response, result) = await _client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
+        var (response, result) = await Client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -338,7 +297,7 @@ public class OrganizationUnitTests : IDisposable
         result.Data.ShouldBeTrue();
 
         //// 验证删除是否成功
-        //var getResponse = await _client.GetAsync($"/api/organization-units/{createResult.Data.Id}");
+        //var getResponse = await Client.GetAsync($"/api/organization-units/{createResult.Data.Id}");
         //Assert.False(getResponse.IsSuccessStatusCode);
     }
 
@@ -350,7 +309,7 @@ public class OrganizationUnitTests : IDisposable
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var deleteRequest = new DeleteOrganizationUnitRequest(nonExistentId);
-        var (response, result) = await _client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
+        var (response, result) = await Client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -366,7 +325,7 @@ public class OrganizationUnitTests : IDisposable
         var treeRequest = new GetOrganizationUnitTreeRequest(IncludeInactive: false);
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
+        var (response, result) = await Client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -381,13 +340,13 @@ public class OrganizationUnitTests : IDisposable
         // 先创建一个测试组织单位
         var testName = $"树形测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(testName, "树形测试描述");
-        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        var (createResponse, createResult) = await Client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
         createResult.ShouldNotBeNull();
         _createdOrganizationUnitIds.Add(createResult.Data.Id);
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var treeRequest = new GetOrganizationUnitTreeRequest(IncludeInactive: true);
-        var (response, result) = await _client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
+        var (response, result) = await Client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeTrue();
@@ -403,7 +362,7 @@ public class OrganizationUnitTests : IDisposable
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var treeRequest = new GetOrganizationUnitTreeRequest(IncludeInactive: false);
-        var (response, result) = await _client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
+        var (response, result) = await Client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();
@@ -421,7 +380,7 @@ public class OrganizationUnitTests : IDisposable
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var queryInput = new OrganizationUnitQueryInput();
-        var (response, result) = await _client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
+        var (response, result) = await Client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();
@@ -445,7 +404,7 @@ public class OrganizationUnitTests : IDisposable
         );
 
         // Act - 使用FastEndpoints的强类型扩展方法
-        var (response, result) = await _client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
+        var (response, result) = await Client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();
@@ -464,7 +423,7 @@ public class OrganizationUnitTests : IDisposable
 
         // Act - 使用FastEndpoints的强类型扩展方法
         var deleteRequest = new DeleteOrganizationUnitRequest(organizationUnitId);
-        var (response, result) = await _client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
+        var (response, result) = await Client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
 
         // Assert - 使用Shouldly断言
         response.IsSuccessStatusCode.ShouldBeFalse();

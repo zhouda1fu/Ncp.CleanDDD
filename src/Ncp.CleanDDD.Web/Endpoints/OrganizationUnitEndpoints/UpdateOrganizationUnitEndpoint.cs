@@ -46,7 +46,7 @@ public class UpdateOrganizationUnitEndpoint : Endpoint<UpdateOrganizationUnitReq
     public override void Configure()
     {
         // 设置HTTP PUT方法，用于更新组织单位信息
-        Put("/api/organization-units/{organizationUnitId}");
+        Put("/api/organization-units");
         
         // 设置JWT Bearer认证方案，要求用户必须提供有效的JWT令牌
         AuthSchemes(JwtBearerDefaults.AuthenticationScheme);
