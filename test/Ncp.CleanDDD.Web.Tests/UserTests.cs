@@ -1,14 +1,14 @@
-using Microsoft.EntityFrameworkCore;
 using Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate;
 using Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate;
 using Ncp.CleanDDD.Domain.AggregatesModel.UserAggregate;
-using Ncp.CleanDDD.Infrastructure;
 using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 using Ncp.CleanDDD.Web.Tests.Extensions;
 using NetCorePal.Extensions.Dto;
+using Shouldly;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using FastEndpoints.Testing;
+using FastEndpoints;
 
 namespace Ncp.CleanDDD.Web.Tests;
 
@@ -19,7 +19,7 @@ public class UserTests : IDisposable
     private string? _authToken;
     private string? _refreshToken;
     private UserId? _testUserId;
-    private readonly List<UserId> _createdUserIds = new();
+    private readonly List<UserId> _createdUserIds = [];
 
     // 测试数据常量
     private const string TestPassword = "Test123!";
@@ -49,12 +49,15 @@ public class UserTests : IDisposable
         if (_authToken != null)
         {
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _authToken);
-            
+
             foreach (var userId in _createdUserIds)
             {
                 try
                 {
-                    await _client.DeleteAsync($"/api/users/{userId}");
+                    var deleteRequest = new DeleteUserRequest(userId);
+
+                    // 使用FastEndpoints的强类型扩展方法
+                    await _client.DELETEAsync<DeleteUserEndpoint, DeleteUserRequest, ResponseData<bool>>(deleteRequest);
                 }
                 catch
                 {
@@ -121,7 +124,7 @@ public class UserTests : IDisposable
         );
     }
 
-    [Fact]
+    [Fact, Priority(1)]
     public async Task Register_NewUser_ShouldSucceed()
     {
         // Arrange
@@ -130,45 +133,43 @@ public class UserTests : IDisposable
         var uniqueEmail = $"test_{Guid.NewGuid():N}@example.com";
         var registerRequest = CreateTestRegisterRequest(uniqueName, uniqueEmail);
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Equal(uniqueName, responseData.Data.Name);
-        Assert.Equal(uniqueEmail, responseData.Data.Email);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Name.ShouldBe(uniqueName);
+        result.Data.Email.ShouldBe(uniqueEmail);
 
         // 记录创建的用户ID用于清理
-        _createdUserIds.Add(responseData.Data.UserId);
+        _createdUserIds.Add(result.Data.UserId);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(2)]
     public async Task Register_WithDuplicateUsername_ShouldFail()
     {
         // Arrange
         SetAuthHeader(false);
         var registerRequest = CreateTestRegisterRequest("admin", "admin2@example.com", "13800138001");
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
 
-        // Assert
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
-        Assert.NotNull(responseData);
-        Assert.True(response.IsSuccessStatusCode);
-        Assert.Equal(400, responseData.Code);
+        // Assert - 使用Shouldly断言
+        result.ShouldNotBeNull();
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.Code.ShouldBe(400);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(3)]
     public async Task GetAllUsers_ShouldSucceed()
     {
         // Arrange
@@ -182,20 +183,18 @@ public class UserTests : IDisposable
             CountTotal = true
         };
 
-        // Act
-        var queryString = $"?pageIndex={queryInput.PageIndex}&pageSize={queryInput.PageSize}&countTotal={queryInput.CountTotal}";
-        var response = await _client.GetAsync($"/api/users{queryString}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetAllUsersEndpoint, UserQueryInput, ResponseData<PagedData<UserInfoQueryDto>>>(queryInput);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<PagedData<UserInfoQueryDto>>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.NotNull(responseData.Data.Items);
-        Assert.True(responseData.Data.Total > 0);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Items.ShouldNotBeNull();
+        result.Data.Total.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [Fact, Priority(4)]
     public async Task UpdateUser_ShouldSucceed()
     {
         // Arrange
@@ -215,19 +214,18 @@ public class UserTests : IDisposable
             Password: "NewPassword123!"
         );
 
-        // Act
-        var response = await _client.PutAsNewtonsoftJsonAsync("/api/user/update", updateRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.PUTAsync<UpdateUserEndpoint, UpdateUserRequest, ResponseData<UpdateUserResponse>>(updateRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<UpdateUserResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Equal("updateduser", responseData.Data.Name);
-        Assert.Equal("updated@example.com", responseData.Data.Email);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Name.ShouldBe("updateduser");
+        result.Data.Email.ShouldBe("updated@example.com");
     }
 
-    [Fact]
+    [Fact, Priority(5)]
     public async Task RefreshToken_ShouldSucceed()
     {
         // Arrange
@@ -238,62 +236,61 @@ public class UserTests : IDisposable
 
         var refreshRequest = new RefreshTokenRequest(_refreshToken!);
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/user/refresh-token", refreshRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.POSTAsync<RefreshTokenEndpoint, RefreshTokenRequest, ResponseData<RefreshTokenResponse>>(refreshRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RefreshTokenResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.NotNull(responseData.Data.Token);
-        Assert.NotNull(responseData.Data.RefreshToken);
-        Assert.NotEqual(_refreshToken, responseData.Data.RefreshToken);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Token.ShouldNotBeNull();
+        result.Data.RefreshToken.ShouldNotBeNull();
+        result.Data.RefreshToken.ShouldNotBe(_refreshToken);
     }
 
-    [Fact]
+    [Fact, Priority(6)]
     public async Task DeleteUser_ShouldSucceed()
     {
         // Arrange
         var testUserId = await CreateTestUserForDeletion();
+        var deleteRequest = new DeleteUserRequest(testUserId);
 
-        // Act
-        var response = await _client.DeleteAsync($"/api/users/{testUserId}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.DELETEAsync<DeleteUserEndpoint,DeleteUserRequest, ResponseData<bool>>(deleteRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-        Assert.NotNull(responseData);
-        Assert.True(responseData.Data);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact, Priority(7)]
     public async Task UpdateUserRoles_ShouldSucceed()
     {
         // Arrange
+        SetAuthHeader(false);
         var uniqueName = $"update_user_roles_{Guid.NewGuid():N}";
         var uniqueEmail = $"update_user_roles_{Guid.NewGuid():N}@example.com";
         var registerRequest = CreateTestRegisterRequest(uniqueName, uniqueEmail, "13800138003");
 
-        var registerResponse = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
-        var registerResponseData = await registerResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
-        Assert.NotNull(registerResponseData);
+        var (registerResponse, registerResult) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
+        registerResult.ShouldNotBeNull();
 
-        var roleIds = new List<RoleId> { new RoleId(Guid.NewGuid()) };
-        var updateRolesRequest = new UpdateUserRolesRequest(registerResponseData.Data.UserId, roleIds);
+        SetAuthHeader(true);
+        var roleIds = new List<RoleId> { new(Guid.NewGuid()) };
+        var updateRolesRequest = new UpdateUserRolesRequest(registerResult.Data.UserId, roleIds);
 
-        // Act
-        var response = await _client.PutAsNewtonsoftJsonAsync("/api/users/update-roles", updateRolesRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.PUTAsync<UpdateUserRolesEndpoint, UpdateUserRolesRequest, ResponseData<UpdateUserRolesResponse>>(updateRolesRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<UpdateUserRolesResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Equal(registerResponseData.Data.UserId, responseData.Data.UserId);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.UserId.ShouldBe(registerResult.Data.UserId);
 
         // 记录创建的用户ID用于清理
-        _createdUserIds.Add(registerResponseData.Data.UserId);
+        _createdUserIds.Add(registerResult.Data.UserId);
     }
 
     // 辅助方法：创建测试用户
@@ -304,16 +301,15 @@ public class UserTests : IDisposable
         var uniqueName = $"profiletest_{Guid.NewGuid():N}";
         var registerRequest = CreateTestRegisterRequest(uniqueName, "profiletest@example.com", "13800138002");
 
-        var response = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
+        var (response, result) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
 
-        Assert.NotNull(responseData);
-        
+        result.ShouldNotBeNull();
+
         SetAuthHeader(true);
-        _testUserId = responseData.Data.UserId;
-        _createdUserIds.Add(_testUserId);
-        
-        return _testUserId;
+        var testUserId = result.Data.UserId;
+        _createdUserIds.Add(testUserId);
+
+        return testUserId;
     }
 
     private async Task<UserId> CreateTestUserForDeletion()
@@ -323,14 +319,13 @@ public class UserTests : IDisposable
         var uniqueName = $"deletetest_{Guid.NewGuid():N}";
         var registerRequest = CreateTestRegisterRequest(uniqueName, "deletetest@example.com", "13800138003");
 
-        var response = await _client.PostAsJsonAsync("/api/user/register", registerRequest);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<RegisterResponse>>();
+        var (response, result) = await _client.POSTAsync<RegisterEndpoint, RegisterRequest, ResponseData<RegisterResponse>>(registerRequest);
 
         SetAuthHeader(true);
 
-        Assert.NotNull(responseData);
-        _createdUserIds.Add(responseData.Data.UserId);
+        result.ShouldNotBeNull();
+        _createdUserIds.Add(result.Data.UserId);
 
-        return responseData.Data.UserId;
+        return result.Data.UserId;
     }
 }

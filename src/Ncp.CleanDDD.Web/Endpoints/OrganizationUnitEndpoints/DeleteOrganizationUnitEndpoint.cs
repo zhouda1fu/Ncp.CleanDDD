@@ -9,11 +9,17 @@ using NetCorePal.Extensions.Dto;
 namespace Ncp.CleanDDD.Web.Endpoints.OrganizationUnitEndpoints;
 
 /// <summary>
+/// 删除组织单位的请求模型
+/// </summary>
+/// <param name="OrganizationUnitId">组织单位ID</param>
+public record DeleteOrganizationUnitRequest(OrganizationUnitId OrganizationUnitId);
+
+/// <summary>
 /// 删除组织单位的API端点
 /// 该端点用于从系统中删除指定的组织单位
 /// </summary>
 [Tags("OrganizationUnits")] // API文档标签，用于Swagger文档分组
-public class DeleteOrganizationUnitEndpoint : EndpointWithoutRequest<ResponseData<bool>>
+public class DeleteOrganizationUnitEndpoint : Endpoint<DeleteOrganizationUnitRequest, ResponseData<bool>>
 {
     /// <summary>
     /// 中介者模式接口，用于处理命令和查询
@@ -51,7 +57,7 @@ public class DeleteOrganizationUnitEndpoint : EndpointWithoutRequest<ResponseDat
     /// </summary>
     /// <param name="ct">取消令牌，用于支持异步操作的取消</param>
     /// <returns>异步任务</returns>
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(DeleteOrganizationUnitRequest request, CancellationToken ct)
     {
         // 从路由参数中获取组织单位ID
         // 如果ID为空则抛出异常

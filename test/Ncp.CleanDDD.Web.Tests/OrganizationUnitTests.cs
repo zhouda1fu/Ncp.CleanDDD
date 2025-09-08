@@ -1,13 +1,13 @@
-using Microsoft.EntityFrameworkCore;
 using Ncp.CleanDDD.Domain.AggregatesModel.OrganizationUnitAggregate;
-using Ncp.CleanDDD.Infrastructure;
 using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Endpoints.OrganizationUnitEndpoints;
 using Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 using Ncp.CleanDDD.Web.Tests.Extensions;
 using NetCorePal.Extensions.Dto;
+using Shouldly;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using FastEndpoints.Testing;
+using FastEndpoints;
 
 namespace Ncp.CleanDDD.Web.Tests;
 
@@ -43,7 +43,9 @@ public class OrganizationUnitTests : IDisposable
             {
                 try
                 {
-                    await _client.DeleteAsync($"/api/organization-units/{organizationUnitId}");
+                    var deleteRequest = new DeleteOrganizationUnitRequest(organizationUnitId);
+                    // 使用FastEndpoints的强类型扩展方法
+                    await _client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
                 }
                 catch
                 {
@@ -100,7 +102,7 @@ public class OrganizationUnitTests : IDisposable
         );
     }
 
-    [Fact]
+    [Fact, Priority(1)]
     public async Task CreateOrganizationUnit_NewOrganizationUnit_ShouldSucceed()
     {
         // Arrange
@@ -108,71 +110,68 @@ public class OrganizationUnitTests : IDisposable
         var description = "测试部门描述";
         var createRequest = CreateTestOrganizationUnitRequest(uniqueName, description);
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/organization-units", createRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateOrganizationUnitResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Equal(uniqueName, responseData.Data.Name);
-        Assert.Equal(description, responseData.Data.Description);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Name.ShouldBe(uniqueName);
+        result.Data.Description.ShouldBe(description);
 
         // 记录创建的组织单位ID用于清理
-        _createdOrganizationUnitIds.Add(responseData.Data.Id);
+        _createdOrganizationUnitIds.Add(result.Data.Id);
     }
 
-    [Fact]
+    [Fact, Priority(2)]
     public async Task CreateOrganizationUnit_WithParentId_ShouldSucceed()
     {
         // Arrange
         // 先创建一个父级组织单位
         var parentName = $"父级部门_{Guid.NewGuid():N}";
         var parentRequest = CreateTestOrganizationUnitRequest(parentName, "父级部门描述");
-        var parentResponse = await _client.PostAsJsonAsync("/api/organization-units", parentRequest);
-        var parentResponseData = await parentResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateOrganizationUnitResponse>>();
-        Assert.NotNull(parentResponseData?.Data);
-        _createdOrganizationUnitIds.Add(parentResponseData.Data.Id);
+        var (parentResponse, parentResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(parentRequest);
+        parentResult.ShouldNotBeNull();
+        _createdOrganizationUnitIds.Add(parentResult.Data.Id);
 
         // 创建子级组织单位
         var childName = $"子级部门_{Guid.NewGuid():N}";
-        var childRequest = CreateTestOrganizationUnitRequest(childName, "子级部门描述", parentResponseData.Data.Id, 2);
+        var childRequest = CreateTestOrganizationUnitRequest(childName, "子级部门描述", parentResult.Data.Id, 2);
 
-        // Act
-        var response = await _client.PostAsNewtonsoftJsonAsync("/api/organization-units", childRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(childRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateOrganizationUnitResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Equal(childName, responseData.Data.Name);
-        Assert.Equal("子级部门描述", responseData.Data.Description);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Name.ShouldBe(childName);
+        result.Data.Description.ShouldBe("子级部门描述");
 
         // 记录创建的组织单位ID用于清理
-        _createdOrganizationUnitIds.Add(responseData.Data.Id);
+        _createdOrganizationUnitIds.Add(result.Data.Id);
     }
 
-    [Fact]
+    [Fact, Priority(3)]
     public async Task CreateOrganizationUnit_WithoutAuth_ShouldFail()
     {
         // Arrange
         SetAuthHeader(false);
         var createRequest = CreateTestOrganizationUnitRequest("未授权测试部门", "测试描述");
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/organization-units", createRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(4)]
     public async Task GetAllOrganizationUnits_ShouldSucceed()
     {
         // Arrange
@@ -184,28 +183,25 @@ public class OrganizationUnitTests : IDisposable
             ParentId = null
         };
 
-        // Act
-        //var queryString = $"?name={queryInput.Name}&description={queryInput.Description}&isActive={queryInput.IsActive}&parentId={queryInput.ParentId}";
-        var response = await _client.GetAsync($"/api/organization-units");//{queryString}
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<IEnumerable<OrganizationUnitQueryDto>>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Fact, Priority(5)]
     public async Task GetAllOrganizationUnits_WithFilters_ShouldSucceed()
     {
         // Arrange
         // 先创建一个测试组织单位
         var testName = $"筛选测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(testName, "筛选测试描述");
-        var createResponse = await _client.PostAsJsonAsync("/api/organization-units", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateOrganizationUnitResponse>>();
-        Assert.NotNull(createResponseData?.Data);
-        _createdOrganizationUnitIds.Add(createResponseData.Data.Id);
+        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        createResult.ShouldNotBeNull();
+        _createdOrganizationUnitIds.Add(createResult.Data.Id);
 
         // 使用名称筛选
         var queryInput = new OrganizationUnitQueryInput
@@ -216,72 +212,65 @@ public class OrganizationUnitTests : IDisposable
             ParentId = null
         };
 
-        // Act
-        var queryString = $"?name={queryInput.Name}&isActive={queryInput.IsActive}";
-        var response = await _client.GetAsync($"/api/organization-units{queryString}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<IEnumerable<OrganizationUnitQueryDto>>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Contains(responseData.Data, ou => ou.Name.Contains("筛选测试"));
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.ShouldContain(ou => ou.Name.Contains("筛选测试"));
     }
 
-    [Fact]
+    [Fact, Priority(6)]
     public async Task GetOrganizationUnit_ExistingId_ShouldSucceed()
     {
         // Arrange
         // 先创建一个测试组织单位
         var testName = $"详情测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(testName, "详情测试描述");
-        var createResponse = await _client.PostAsJsonAsync("/api/organization-units", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateOrganizationUnitResponse>>();
-        Assert.NotNull(createResponseData?.Data);
-        _createdOrganizationUnitIds.Add(createResponseData.Data.Id);
+        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        createResult.ShouldNotBeNull();
+        _createdOrganizationUnitIds.Add(createResult.Data.Id);
 
-        // Act
-        var response = await _client.GetAsync($"/api/organization-units/{createResponseData.Data.Id}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(createResult.Data.Id));
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<GetOrganizationUnitResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Equal(testName, responseData.Data.Name);
-        Assert.Equal("详情测试描述", responseData.Data.Description);
-        Assert.Equal(createResponseData.Data.Id, responseData.Data.Id);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Name.ShouldBe(testName);
+        result.Data.Description.ShouldBe("详情测试描述");
+        result.Data.Id.ShouldBe(createResult.Data.Id);
     }
 
-    [Fact]
+    [Fact, Priority(7)]
     public async Task GetOrganizationUnit_NonExistentId_ShouldReturnNotFound()
     {
         // Arrange
         var nonExistentId = new OrganizationUnitId(99999);
 
-        // Act
-        var response = await _client.GetAsync($"/api/organization-units/{nonExistentId}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(nonExistentId));
 
-
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
         // 根据端点实现，应该返回400状态码和KnownException
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<GetOrganizationUnitResponse>>();
-        Assert.NotNull(responseData);
-        Assert.Equal(0, responseData.Code);
+        result.ShouldNotBeNull();
+        result.Code.ShouldBe(0);
     }
 
-    [Fact]
+    [Fact, Priority(8)]
     public async Task UpdateOrganizationUnit_ExistingId_ShouldSucceed()
     {
         // Arrange
         // 先创建一个测试组织单位
         var originalName = $"更新测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(originalName, "原始描述");
-        var createResponse = await _client.PostAsJsonAsync("/api/organization-units", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateOrganizationUnitResponse>>();
-        Assert.NotNull(createResponseData?.Data);
-        _createdOrganizationUnitIds.Add(createResponseData.Data.Id);
+        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        createResult.ShouldNotBeNull();
+        _createdOrganizationUnitIds.Add(createResult.Data.Id);
 
         // 更新组织单位
         var updateRequest = new UpdateOrganizationUnitRequest(
@@ -291,24 +280,22 @@ public class OrganizationUnitTests : IDisposable
             SortOrder: 2
         );
 
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/organization-units/{createResponseData.Data.Id}", updateRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-        Assert.NotNull(responseData);
-        Assert.True(responseData.Data);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldBeTrue();
 
         // 验证更新是否成功
-        var getResponse = await _client.GetAsync($"/api/organization-units/{createResponseData.Data.Id}");
-        var getResponseData = await getResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<GetOrganizationUnitResponse>>();
-        Assert.NotNull(getResponseData?.Data);
-        Assert.Equal("更新后的部门名称", getResponseData.Data.Name);
-        Assert.Equal("更新后的描述", getResponseData.Data.Description);
+        var (getResponse, getResult) = await _client.GETAsync<GetOrganizationUnitEndpoint, GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse>>(new GetOrganizationUnitRequest(createResult.Data.Id));
+        getResult.ShouldNotBeNull();
+        getResult.Data!.Name.ShouldBe("更新后的部门名称");
+        getResult.Data.Description.ShouldBe("更新后的描述");
     }
 
-    [Fact]
+    [Fact, Priority(9)]
     public async Task UpdateOrganizationUnit_NonExistentId_ShouldFail()
     {
         // Arrange
@@ -320,132 +307,130 @@ public class OrganizationUnitTests : IDisposable
             SortOrder: 1
         );
 
-        // Act
-        var response = await _client.PutAsJsonAsync($"/api/organization-units/{nonExistentId}", updateRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
         // 根据端点实现，应该返回400状态码
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-        Assert.NotNull(responseData);
-        Assert.False(responseData.Data);
+        result.ShouldNotBeNull();
+        result.Data.ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact, Priority(10)]
     public async Task DeleteOrganizationUnit_ExistingId_ShouldSucceed()
     {
         // Arrange
         // 先创建一个测试组织单位
         var testName = $"删除测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(testName, "删除测试描述");
-        var createResponse = await _client.PostAsJsonAsync("/api/organization-units", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateOrganizationUnitResponse>>();
-        Assert.NotNull(createResponseData?.Data);
+        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        createResult.ShouldNotBeNull();
 
-        // Act
-        var response = await _client.DeleteAsync($"/api/organization-units/{createResponseData.Data.Id}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var deleteRequest = new DeleteOrganizationUnitRequest(createResult.Data.Id);
+        var (response, result) = await _client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-        Assert.NotNull(responseData);
-        Assert.True(responseData.Data);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldBeTrue();
 
         //// 验证删除是否成功
-        //var getResponse = await _client.GetAsync($"/api/organization-units/{createResponseData.Data.Id}");
+        //var getResponse = await _client.GetAsync($"/api/organization-units/{createResult.Data.Id}");
         //Assert.False(getResponse.IsSuccessStatusCode);
     }
 
-    [Fact]
+    [Fact, Priority(11)]
     public async Task DeleteOrganizationUnit_NonExistentId_ShouldFail()
     {
         // Arrange
         var nonExistentId = new OrganizationUnitId(99999);
 
-        // Act
-        var response = await _client.DeleteAsync($"/api/organization-units/{nonExistentId}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var deleteRequest = new DeleteOrganizationUnitRequest(nonExistentId);
+        var (response, result) = await _client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
         // 根据端点实现，应该返回400状态码
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-        Assert.NotNull(responseData);
-        Assert.False(responseData.Data);
+        result.ShouldNotBeNull();
+        result.Data.ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact, Priority(12)]
     public async Task GetOrganizationUnitTree_ShouldSucceed()
     {
         // Arrange
         var treeRequest = new GetOrganizationUnitTreeRequest(IncludeInactive: false);
 
-        // Act
-        var response = await _client.GetAsync("/api/organization-units/tree?includeInactive=false");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<IEnumerable<OrganizationUnitTreeDto>>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Fact, Priority(13)]
     public async Task GetOrganizationUnitTree_WithIncludeInactive_ShouldSucceed()
     {
         // Arrange
         // 先创建一个测试组织单位
         var testName = $"树形测试部门_{Guid.NewGuid():N}";
         var createRequest = CreateTestOrganizationUnitRequest(testName, "树形测试描述");
-        var createResponse = await _client.PostAsJsonAsync("/api/organization-units", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateOrganizationUnitResponse>>();
-        Assert.NotNull(createResponseData?.Data);
-        _createdOrganizationUnitIds.Add(createResponseData.Data.Id);
+        var (createResponse, createResult) = await _client.POSTAsync<CreateOrganizationUnitEndpoint, CreateOrganizationUnitRequest, ResponseData<CreateOrganizationUnitResponse>>(createRequest);
+        createResult.ShouldNotBeNull();
+        _createdOrganizationUnitIds.Add(createResult.Data.Id);
 
-        // Act
-        var response = await _client.GetAsync("/api/organization-units/tree?includeInactive=true");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var treeRequest = new GetOrganizationUnitTreeRequest(IncludeInactive: true);
+        var (response, result) = await _client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<IEnumerable<OrganizationUnitTreeDto>>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Fact, Priority(14)]
     public async Task GetOrganizationUnitTree_WithoutAuth_ShouldFail()
     {
         // Arrange
         SetAuthHeader(false);
 
-        // Act
-        var response = await _client.GetAsync("/api/organization-units/tree");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var treeRequest = new GetOrganizationUnitTreeRequest(IncludeInactive: false);
+        var (response, result) = await _client.GETAsync<GetOrganizationUnitTreeEndpoint, GetOrganizationUnitTreeRequest, ResponseData<IEnumerable<OrganizationUnitTreeDto>>>(treeRequest);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(15)]
     public async Task GetAllOrganizationUnits_WithoutAuth_ShouldFail()
     {
         // Arrange
         SetAuthHeader(false);
 
-        // Act
-        var response = await _client.GetAsync("/api/organization-units");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var queryInput = new OrganizationUnitQueryInput();
+        var (response, result) = await _client.GETAsync<GetAllOrganizationUnitsEndpoint, OrganizationUnitQueryInput, ResponseData<IEnumerable<OrganizationUnitQueryDto>>>(queryInput);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(16)]
     public async Task UpdateOrganizationUnit_WithoutAuth_ShouldFail()
     {
         // Arrange
@@ -457,29 +442,31 @@ public class OrganizationUnitTests : IDisposable
             SortOrder: 1
         );
 
-        // Act
-        var response = await _client.PutAsJsonAsync("/api/organization-units/1", updateRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.PUTAsync<UpdateOrganizationUnitEndpoint, UpdateOrganizationUnitRequest, ResponseData<bool>>(updateRequest);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(17)]
     public async Task DeleteOrganizationUnit_WithoutAuth_ShouldFail()
     {
         // Arrange
         SetAuthHeader(false);
+        var organizationUnitId = new OrganizationUnitId(1);
 
-        // Act
-        var response = await _client.DeleteAsync("/api/organization-units/1");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var deleteRequest = new DeleteOrganizationUnitRequest(organizationUnitId);
+        var (response, result) = await _client.DELETEAsync<DeleteOrganizationUnitEndpoint, DeleteOrganizationUnitRequest, ResponseData<bool>>(deleteRequest);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);

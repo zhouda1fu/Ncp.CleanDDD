@@ -8,6 +8,12 @@ using Ncp.CleanDDD.Web.AppPermissions;
 namespace Ncp.CleanDDD.Web.Endpoints.OrganizationUnitEndpoints;
 
 /// <summary>
+/// 获取单个组织单位的请求模型
+/// </summary>
+/// <param name="OrganizationUnitId">组织单位ID</param>
+public record GetOrganizationUnitRequest(OrganizationUnitId OrganizationUnitId);
+
+/// <summary>
 /// 获取单个组织单位的响应模型
 /// </summary>
 /// <param name="Id">组织单位ID</param>
@@ -24,7 +30,7 @@ public record GetOrganizationUnitResponse(OrganizationUnitId Id, string Name, st
 /// 该端点用于根据ID查询特定组织单位的详细信息
 /// </summary>
 [Tags("OrganizationUnits")] // API文档标签，用于Swagger文档分组
-public class GetOrganizationUnitEndpoint : EndpointWithoutRequest<ResponseData<GetOrganizationUnitResponse?>>
+public class GetOrganizationUnitEndpoint : Endpoint<GetOrganizationUnitRequest, ResponseData<GetOrganizationUnitResponse?>>
 {
     /// <summary>
     /// 组织单位查询服务，用于执行组织单位相关的查询操作
@@ -62,14 +68,12 @@ public class GetOrganizationUnitEndpoint : EndpointWithoutRequest<ResponseData<G
     /// </summary>
     /// <param name="ct">取消令牌，用于支持异步操作的取消</param>
     /// <returns>异步任务</returns>
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(GetOrganizationUnitRequest request, CancellationToken ct)
     {
-        // 从路由参数中获取组织单位ID
-        var organizationUnitId = Route<long>("organizationUnitId");
         
         // 通过查询服务获取组织单位详细信息
         // 如果不存在则抛出已知异常
-        var organizationUnit = await _organizationUnitQuery.GetOrganizationUnitByIdAsync(new OrganizationUnitId(organizationUnitId), ct) ?? 
+        var organizationUnit = await _organizationUnitQuery.GetOrganizationUnitByIdAsync(request.OrganizationUnitId, ct) ?? 
                                throw new KnownException("组织架构不存在");
         
         // 创建响应对象，包含组织单位的详细信息

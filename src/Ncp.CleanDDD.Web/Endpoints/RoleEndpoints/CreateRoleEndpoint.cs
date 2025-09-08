@@ -2,10 +2,11 @@ using FastEndpoints;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using NetCorePal.Extensions.Dto;
+using Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate;
 using Ncp.CleanDDD.Web.Application.Commands;
 using Ncp.CleanDDD.Web.Application.Commands.RoleCommands;
 using Ncp.CleanDDD.Web.AppPermissions;
+using NetCorePal.Extensions.Dto;
 
 namespace Ncp.CleanDDD.Web.Endpoints.RoleEndpoints;
 
@@ -23,7 +24,7 @@ public record CreateRoleRequest(string Name, string Description, IEnumerable<str
 /// <param name="RoleId">新创建的角色ID</param>
 /// <param name="Name">角色名称</param>
 /// <param name="Description">角色描述</param>
-public record CreateRoleResponse(string RoleId, string Name, string Description);
+public record CreateRoleResponse(RoleId RoleId, string Name, string Description);
 
 /// <summary>
 /// 创建角色的API端点
@@ -80,7 +81,7 @@ public class CreateRoleEndpoint : Endpoint<CreateRoleRequest, ResponseData<Creat
         
         // 创建响应对象，包含新创建的角色信息
         var response = new CreateRoleResponse(
-            result.ToString(),    // 新创建的角色ID
+            result,    // 新创建的角色ID
             req.Name,             // 角色名称
             req.Description       // 角色描述
         );

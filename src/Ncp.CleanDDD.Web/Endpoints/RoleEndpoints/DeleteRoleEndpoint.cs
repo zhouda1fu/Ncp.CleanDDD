@@ -9,12 +9,15 @@ using Ncp.CleanDDD.Web.AppPermissions;
 
 namespace Ncp.CleanDDD.Web.Endpoints.RoleEndpoints;
 
+
+public record DeleteRoleRequest(RoleId RoleId);
+
 /// <summary>
 /// 删除角色的API端点
 /// 该端点用于从系统中删除指定的角色
 /// </summary>
 [Tags("Roles")] // API文档标签，用于Swagger文档分组
-public class DeleteRoleEndpoint : EndpointWithoutRequest<ResponseData<bool>>
+public class DeleteRoleEndpoint : Endpoint<DeleteRoleRequest, ResponseData<bool>>
 {
     /// <summary>
     /// 中介者模式接口，用于处理命令和查询
@@ -52,7 +55,7 @@ public class DeleteRoleEndpoint : EndpointWithoutRequest<ResponseData<bool>>
     /// </summary>
     /// <param name="ct">取消令牌，用于支持异步操作的取消</param>
     /// <returns>异步任务</returns>
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(DeleteRoleRequest request, CancellationToken ct)
     {
         // 从路由参数中获取角色ID
         // 如果ID为空则抛出异常

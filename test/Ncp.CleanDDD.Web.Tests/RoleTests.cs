@@ -1,13 +1,13 @@
-using Microsoft.EntityFrameworkCore;
 using Ncp.CleanDDD.Domain.AggregatesModel.RoleAggregate;
-using Ncp.CleanDDD.Infrastructure;
 using Ncp.CleanDDD.Web.Application.Queries;
 using Ncp.CleanDDD.Web.Endpoints.RoleEndpoints;
 using Ncp.CleanDDD.Web.Endpoints.UserEndpoints;
 using Ncp.CleanDDD.Web.Tests.Extensions;
 using NetCorePal.Extensions.Dto;
+using Shouldly;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using FastEndpoints.Testing;
+using FastEndpoints;
 
 namespace Ncp.CleanDDD.Web.Tests;
 
@@ -49,7 +49,9 @@ public class RoleTests : IDisposable
             {
                 try
                 {
-                    await _client.DeleteAsync($"/api/roles/{roleId}");
+                    var deleteRequest = new DeleteRoleRequest(roleId);
+                    // 使用FastEndpoints的强类型扩展方法
+                    await _client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
                 }
                 catch
                 {
@@ -106,32 +108,26 @@ public class RoleTests : IDisposable
         );
     }
 
-    [Fact]
+    [Fact, Priority(1)]
     public async Task CreateRole_ValidRequest_ShouldSucceed()
     {
         // Arrange
         var uniqueName = $"创建角色测试_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(uniqueName, "创建角色测试描述");
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/roles", createRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateRoleResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Equal(uniqueName, responseData.Data.Name);
-        Assert.Equal("创建角色测试描述", responseData.Data.Description);
-
-        // 记录创建的角色ID用于清理
-        if (Guid.TryParse(responseData.Data.RoleId, out var roleGuid))
-        {
-            _createdRoleIds.Add(new RoleId(roleGuid));
-        }
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Name.ShouldBe(uniqueName);
+        result.Data.Description.ShouldBe("创建角色测试描述");
+        _createdRoleIds.Add(result.Data.RoleId);
     }
 
-    [Fact]
+    [Fact, Priority(2)]
     public async Task CreateRole_DuplicateName_ShouldFail()
     {
         // Arrange
@@ -139,27 +135,22 @@ public class RoleTests : IDisposable
         var createRequest = CreateTestRoleRequest(roleName);
 
         // 先创建一个角色
-        var firstResponse = await _client.PostAsJsonAsync("/api/roles", createRequest);
-        Assert.True(firstResponse.IsSuccessStatusCode);
-        var firstResponseData = await firstResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateRoleResponse>>();
-        if (Guid.TryParse(firstResponseData!.Data!.RoleId, out var roleGuid))
-        {
-            _createdRoleIds.Add(new RoleId(roleGuid));
-        }
+        var (firstResponse, firstResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        firstResponse.IsSuccessStatusCode.ShouldBeTrue();
+        _createdRoleIds.Add(firstResult!.Data!.RoleId);
 
         // Act - 尝试创建相同名称的角色
         var duplicateRequest = CreateTestRoleRequest(roleName);
-        var response = await _client.PostAsJsonAsync("/api/roles", duplicateRequest);
-        var duplicateResponseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateRoleResponse>>();
+        var (response, result) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(duplicateRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        Assert.NotNull(duplicateResponseData);
-        Assert.Equal(400, duplicateResponseData.Code);
-        Assert.Contains("该角色已存在", duplicateResponseData.Message); 
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Code.ShouldBe(400);
+        result.Message.ShouldContain("该角色已存在");
     }
 
-    [Fact]
+    [Fact, Priority(3)]
     public async Task GetAllRoles_ShouldSucceed()
     {
         // Arrange
@@ -173,129 +164,117 @@ public class RoleTests : IDisposable
             CountTotal = true
         };
 
-        // Act
-        var queryString = $"?pageIndex={queryInput.PageIndex}&pageSize={queryInput.PageSize}&countTotal={queryInput.CountTotal}";
-        var response = await _client.GetAsync($"/api/roles{queryString}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<PagedData<RoleQueryDto>>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.NotNull(responseData.Data.Items);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Items.ShouldNotBeNull();
     }
 
-    [Fact]
+    [Fact, Priority(4)]
     public async Task GetAllRoles_WithNameFilter_ShouldSucceed()
     {
         // Arrange
         var testRoleName = $"筛选测试角色_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(testRoleName);
-        var createResponse = await _client.PostAsJsonAsync("/api/roles", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateRoleResponse>>();
-        if (Guid.TryParse(createResponseData!.Data!.RoleId, out var roleGuid))
+        var (createResponse, createResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        _createdRoleIds.Add(createResult!.Data!.RoleId);
+
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var queryInput = new RoleQueryInput
         {
-            _createdRoleIds.Add(new RoleId(roleGuid));
-        }
+            PageIndex = 1,
+            PageSize = 10,
+            Name = testRoleName,
+            Description = null,
+            IsActive = null,
+            CountTotal = true
+        };
+        var (response, result) = await _client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
 
-        // Act
-        var queryString = $"?pageIndex=1&pageSize=10&name={testRoleName}&countTotal=true";
-        var response = await _client.GetAsync($"/api/roles{queryString}");
-
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<PagedData<RoleQueryDto>>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.NotNull(responseData.Data.Items);
-        Assert.True(responseData.Data.Items.Any(r => r.Name == testRoleName));
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Items.ShouldNotBeNull();
+        result.Data.Items.ShouldContain(r => r.Name == testRoleName);
     }
 
-    [Fact]
+    [Fact, Priority(5)]
     public async Task GetRole_ValidId_ShouldSucceed()
     {
         // Arrange - 先创建一个角色
         var testRoleName = $"获取角色测试_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(testRoleName);
-        var createResponse = await _client.PostAsJsonAsync("/api/roles", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateRoleResponse>>();
-        Assert.NotNull(createResponseData);
+        var (createResponse, createResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        createResult.ShouldNotBeNull();
         
-        var roleId = createResponseData.Data!.RoleId;
-        if (Guid.TryParse(roleId, out var roleGuid))
-        {
-            _createdRoleIds.Add(new RoleId(roleGuid));
-        }
+        var roleId = createResult.Data!.RoleId;
 
-        // Act
-        var response = await _client.GetAsync($"/api/roles/{roleId}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<GetRoleResponse>>();
-        Assert.NotNull(responseData);
-        Assert.NotNull(responseData.Data);
-        Assert.Equal(testRoleName, responseData.Data.Name);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldNotBeNull();
+        result.Data.Name.ShouldBe(testRoleName);
     }
 
-    [Fact]
+    [Fact, Priority(6)]
     public async Task GetRole_InvalidId_ShouldFail()
     {
         // Arrange
-        var invalidRoleId = Guid.NewGuid().ToString();
+        var invalidRoleId = new RoleId(Guid.NewGuid());
 
-        // Act
-        var response = await _client.GetAsync($"/api/roles/{invalidRoleId}");
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<GetRoleResponse>>();
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(invalidRoleId));
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        Assert.NotNull(responseData);
-        Assert.Contains("Invalid Credentials", responseData.Message);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Message.ShouldContain("Invalid Credentials");
     }
 
-    [Fact]
+    [Fact, Priority(7)]
     public async Task UpdateRole_ValidRequest_ShouldSucceed()
     {
         // Arrange - 先创建一个角色
         var originalName = $"更新前角色_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(originalName);
-        var createResponse = await _client.PostAsJsonAsync("/api/roles", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateRoleResponse>>();
-        Assert.NotNull(createResponseData);
+        var (createResponse, createResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        createResult.ShouldNotBeNull();
         
-        var roleId = createResponseData.Data!.RoleId;
-        if (Guid.TryParse(roleId, out var roleGuid))
-        {
-            _createdRoleIds.Add(new RoleId(roleGuid));
-        }
+        var roleId = createResult.Data!.RoleId;
+        _createdRoleIds.Add(roleId);
 
         var updatedName = $"更新后角色_{Guid.NewGuid():N}";
         var updateRequest = new UpdateRoleInfoRequest(
-            RoleId: new RoleId(roleGuid),
+            RoleId: roleId,
             Name: updatedName,
             Description: "更新后的描述",
             PermissionCodes: new[] { "updated.read", "updated.write" }
         );
 
-        // Act
-        var response = await _client.PutAsNewtonsoftJsonAsync("/api/roles/update", updateRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-        Assert.NotNull(responseData);
-        Assert.True(responseData.Data);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldBeTrue();
 
         // 验证更新是否成功
-        var getResponse = await _client.GetAsync($"/api/roles/{roleId}");
-        var getRoleData = await getResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<GetRoleResponse>>();
-        Assert.NotNull(getRoleData);
-        Assert.Equal(updatedName, getRoleData.Data!.Name);
-        Assert.Equal("更新后的描述", getRoleData.Data.Description);
+        var (getResponse, getResult) = await _client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
+        getResult.ShouldNotBeNull();
+        getResult.Data!.Name.ShouldBe(updatedName);
+        getResult.Data.Description.ShouldBe("更新后的描述");
     }
 
-    [Fact]
+    [Fact, Priority(8)]
     public async Task UpdateRole_InvalidId_ShouldFail()
     {
         // Arrange
@@ -307,101 +286,98 @@ public class RoleTests : IDisposable
             PermissionCodes: new[] { "test.read" }
         );
 
-        // Act
-        var response = await _client.PutAsNewtonsoftJsonAsync("/api/roles/update", updateRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
 
-        // Assert
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-
-        Assert.True(response.IsSuccessStatusCode);
-        Assert.NotNull(responseData);
-        Assert.Contains("未找到角色", responseData.Message);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Message.ShouldContain("未找到角色");
     }
 
-    [Fact]
+    [Fact, Priority(9)]
     public async Task DeleteRole_ValidId_ShouldSucceed()
     {
         // Arrange - 先创建一个角色
         var testRoleName = $"待删除角色_{Guid.NewGuid():N}";
         var createRequest = CreateTestRoleRequest(testRoleName);
-        var createResponse = await _client.PostAsJsonAsync("/api/roles", createRequest);
-        var createResponseData = await createResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<CreateRoleResponse>>();
-        Assert.NotNull(createResponseData);
+        var (createResponse, createResult) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
+        createResult.ShouldNotBeNull();
         
-        var roleId = createResponseData.Data!.RoleId;
+        var roleId = createResult.Data!.RoleId;
 
-        // Act
-        var response = await _client.DeleteAsync($"/api/roles/{roleId}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var deleteRequest = new DeleteRoleRequest(roleId);
+        var (response, result) = await _client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
 
-        // Assert
-        Assert.True(response.IsSuccessStatusCode);
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-        Assert.NotNull(responseData);
-        Assert.True(responseData.Data);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Data.ShouldBeTrue();
 
         // 验证角色确实被删除了
-        var getResponse = await _client.GetAsync($"/api/roles/{roleId}");
-        var getResponseData = await getResponse.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
+        var (getResponse, getResult) = await _client.GETAsync<GetRoleEndpoint, GetRoleRequest, ResponseData<GetRoleResponse>>(new GetRoleRequest(roleId));
 
-        Assert.True(getResponse.IsSuccessStatusCode);
-        Assert.NotNull(getResponseData);
-        Assert.Contains("Invalid Credentials", getResponseData.Message);
+        getResponse.IsSuccessStatusCode.ShouldBeTrue();
+        getResult.ShouldNotBeNull();
+        getResult.Message.ShouldContain("Invalid Credentials");
 
         // 不需要添加到清理列表，因为已经删除了
     }
 
-    [Fact]
+    [Fact, Priority(10)]
     public async Task DeleteRole_InvalidId_ShouldFail()
     {
         // Arrange
-        var invalidRoleId = Guid.NewGuid().ToString();
+        var invalidRoleId = new RoleId(Guid.NewGuid());
 
-        // Act
-        var response = await _client.DeleteAsync($"/api/roles/{invalidRoleId}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var deleteRequest = new DeleteRoleRequest(invalidRoleId);
+        var (response, result) = await _client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
 
-        // Assert
-        var responseData = await response.Content.ReadFromNewtonsoftJsonAsync<ResponseData<bool>>();
-        Assert.True(response.IsSuccessStatusCode);
-        Assert.NotNull(responseData);
-        Assert.Contains("角色不存在", responseData.Message);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeTrue();
+        result.ShouldNotBeNull();
+        result.Message.ShouldContain("角色不存在");
     }
 
-    [Fact]
+    [Fact, Priority(11)]
     public async Task CreateRole_WithoutAuthentication_ShouldFail()
     {
         // Arrange
         SetAuthHeader(false);
         var createRequest = CreateTestRoleRequest();
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/roles", createRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.POSTAsync<CreateRoleEndpoint, CreateRoleRequest, ResponseData<CreateRoleResponse>>(createRequest);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(12)]
     public async Task GetAllRoles_WithoutAuthentication_ShouldFail()
     {
         // Arrange
         SetAuthHeader(false);
 
-        // Act
-        var response = await _client.GetAsync("/api/roles");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var queryInput = new RoleQueryInput();
+        var (response, result) = await _client.GETAsync<GetAllRoleEndpoint, RoleQueryInput, ResponseData<PagedData<RoleQueryDto>>>(queryInput);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(13)]
     public async Task UpdateRole_WithoutAuthentication_ShouldFail()
     {
         // Arrange
@@ -413,30 +389,31 @@ public class RoleTests : IDisposable
             PermissionCodes: new[] { "test.read" }
         );
 
-        // Act
-        var response = await _client.PutAsNewtonsoftJsonAsync("/api/roles/update", updateRequest);
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var (response, result) = await _client.PUTAsync<UpdateRoleEndpoint, UpdateRoleInfoRequest, ResponseData<bool>>(updateRequest);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);
     }
 
-    [Fact]
+    [Fact, Priority(14)]
     public async Task DeleteRole_WithoutAuthentication_ShouldFail()
     {
         // Arrange
         SetAuthHeader(false);
-        var roleId = Guid.NewGuid().ToString();
+        var roleId = new RoleId(Guid.NewGuid());
 
-        // Act
-        var response = await _client.DeleteAsync($"/api/roles/{roleId}");
+        // Act - 使用FastEndpoints的强类型扩展方法
+        var deleteRequest = new DeleteRoleRequest(roleId);
+        var (response, result) = await _client.DELETEAsync<DeleteRoleEndpoint, DeleteRoleRequest, ResponseData<bool>>(deleteRequest);
 
-        // Assert
-        Assert.False(response.IsSuccessStatusCode);
-        Assert.Equal(System.Net.HttpStatusCode.Unauthorized, response.StatusCode);
+        // Assert - 使用Shouldly断言
+        response.IsSuccessStatusCode.ShouldBeFalse();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.Unauthorized);
 
         // 恢复认证头
         SetAuthHeader(true);
