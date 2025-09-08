@@ -99,16 +99,25 @@ public class LogQuery
         var logs = new List<LogItemDto>();
         using var reader = await dataCmd.ExecuteReaderAsync(cancellationToken);
 
+        // 提前获取列索引并缓存
+        var idIndex = reader.GetOrdinal("Id");
+        var timestampIndex = reader.GetOrdinal("Timestamp");
+        var levelIndex = reader.GetOrdinal("Level");
+        var messageIndex = reader.GetOrdinal("Message");
+        var exceptionIndex = reader.GetOrdinal("Exception");
+        var correlationIdIndex = reader.GetOrdinal("CorrelationId");
+        var propertiesIndex = reader.GetOrdinal("Properties");       
+
         while (await reader.ReadAsync(cancellationToken))
         {
             logs.Add(new LogItemDto(
-                Id: reader.GetInt64("Id"),
-                Timestamp: reader.GetDateTime("Timestamp"),
-                Level: reader.GetString("Level"),
-                Message: reader.GetString("Message"),
-                Exception: reader.IsDBNull(4) ? null : reader.GetString("Exception"),
-                CorrelationId: reader.IsDBNull(5) ? null : reader.GetString("CorrelationId"),
-                Properties: reader.IsDBNull(6) ? null : reader.GetString("Properties")
+                Id: reader.GetInt64(idIndex),
+                Timestamp: reader.GetDateTime(timestampIndex),
+                Level: reader.GetString(levelIndex),
+                Message: reader.GetString(messageIndex),
+                Exception: reader.IsDBNull(exceptionIndex) ? null : reader.GetString(exceptionIndex),
+                CorrelationId: reader.IsDBNull(correlationIdIndex) ? null : reader.GetString(correlationIdIndex),
+                Properties: reader.IsDBNull(propertiesIndex) ? null : reader.GetString(propertiesIndex)
             ));
         }
 
@@ -140,16 +149,25 @@ public class LogQuery
         var logs = new List<LogItemDto>();
         using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
+        // 提前获取列索引并缓存
+        var idIndex = reader.GetOrdinal("Id");
+        var timestampIndex = reader.GetOrdinal("Timestamp");
+        var levelIndex = reader.GetOrdinal("Level");
+        var messageIndex = reader.GetOrdinal("Message");
+        var exceptionIndex = reader.GetOrdinal("Exception");
+        var correlationIdIndex = reader.GetOrdinal("CorrelationId");
+        var propertiesIndex = reader.GetOrdinal("Properties");
+
         while (await reader.ReadAsync(cancellationToken))
         {
             logs.Add(new LogItemDto(
-                Id: reader.GetInt64("Id"),
-                Timestamp: reader.GetDateTime("Timestamp"),
-                Level: reader.GetString("Level"),
-                Message: reader.GetString("Message"),
-                Exception: reader.IsDBNull(4) ? null : reader.GetString("Exception"),
-                CorrelationId: reader.IsDBNull(5) ? null : reader.GetString("CorrelationId"),
-                Properties: reader.IsDBNull(6) ? null : reader.GetString("Properties")
+                Id: reader.GetInt64(idIndex),
+                Timestamp: reader.GetDateTime(timestampIndex),
+                Level: reader.GetString(levelIndex),
+                Message: reader.GetString(messageIndex),
+                Exception: reader.IsDBNull(exceptionIndex) ? null : reader.GetString(exceptionIndex),
+                CorrelationId: reader.IsDBNull(correlationIdIndex) ? null : reader.GetString(correlationIdIndex),
+                Properties: reader.IsDBNull(propertiesIndex) ? null : reader.GetString(propertiesIndex)
             ));
         }
 
