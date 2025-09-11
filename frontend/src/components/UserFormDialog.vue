@@ -65,8 +65,8 @@
         <el-col :span="12">
           <el-form-item label="性别" prop="gender">
             <el-select v-model="userForm.gender" placeholder="请选择性别" clearable>
-              <el-option label="男" value="男" />
-              <el-option label="女" value="女" />
+              <el-option :label="GENDER.MALE" :value="GENDER.MALE" />
+              <el-option :label="GENDER.FEMALE" :value="GENDER.FEMALE" />
             </el-select>
           </el-form-item>
         </el-col>
@@ -105,13 +105,13 @@
       
       <el-form-item label="状态" prop="status">
         <el-radio-group v-model="userForm.status" class="status-radio-group">
-          <el-radio :label="1" class="status-radio">
+          <el-radio :label="USER_STATUS.ENABLED" class="status-radio">
             <div class="radio-content">
               <el-icon size="16" color="#10b981"><CircleCheck /></el-icon>
               <span>启用</span>
             </div>
           </el-radio>
-          <el-radio :label="0" class="status-radio">
+          <el-radio :label="USER_STATUS.DISABLED" class="status-radio">
             <div class="radio-content">
               <el-icon size="16" color="#ef4444"><CircleClose /></el-icon>
               <span>禁用</span>
@@ -158,8 +158,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, defineProps, defineEmits } from 'vue'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ref, reactive, computed, watch } from 'vue'
+import { ElMessage, type FormInstance } from 'element-plus'
 import {
   User, 
   UserFilled, 
@@ -169,13 +169,18 @@ import {
   CircleCheck,
   CircleClose
 } from '@element-plus/icons-vue'
-import { register, updateUser, type RegisterRequest, type UserInfo } from '@/api/user'
-import { type OrganizationUnitTree } from '@/api/organization'
+import { register, updateUser, type RegisterRequest } from '@/api/user'
+import type { User as UserType, OrganizationUnitTree } from '@/types'
+import { ValidationRules } from '@/utils/validation'
+import { DateFormatter } from '@/utils/format'
+import { ErrorHandler } from '@/utils/error'
+import { useLoading } from '@/composables'
+import { GENDER, USER_STATUS } from '@/constants'
 
 interface Props {
   visible: boolean
   isEdit: boolean
-  userData?: UserInfo | null
+  userData?: UserType | null
   organizationTreeOptions: OrganizationUnitTree[]
 }
 
@@ -187,7 +192,7 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const submitLoading = ref(false)
+const { loading: submitLoading, withLoading } = useLoading()
 const userFormRef = ref<FormInstance>()
 
 const userForm = reactive<RegisterRequest>({
@@ -197,7 +202,7 @@ const userForm = reactive<RegisterRequest>({
   confirmPassword: '',
   phone: '',
   realName: '',
-  status: 1,
+  status: USER_STATUS.ENABLED,
   roleIds: [],
   gender: '',
   age: 0,
@@ -207,61 +212,23 @@ const userForm = reactive<RegisterRequest>({
   userId: ''
 })
 
-// 密码确认验证函数
-const validateConfirmPassword = (_: any, value: string, callback: any) => {
-  if (value === '') {
-    callback(new Error('请再次输入密码'))
-  } else if (value !== userForm.password) {
-    callback(new Error('两次输入密码不一致'))
-  } else {
-    callback()
-  }
-}
-
-const userRules: FormRules = {
-  name: [
-    { required: true, message: '请输入用户名', trigger: 'onBlur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'onBlur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'onBlur' }
-  ],
-  confirmPassword: [
-    { required: true, validator: validateConfirmPassword, trigger: 'onBlur' }
-  ],
-  realName: [
-    { required: true, message: '请输入真实姓名', trigger: 'onBlur' }
-  ],
-  gender: [
-    { required: true, message: '请选择性别', trigger: 'change' }
-  ],
-  organizationUnitId: [
-    { required: true, message: '请选择组织架构', trigger: 'change' }
-  ],
-  birthDate: [
-    { required: true, message: '请选择出生日期', trigger: 'change' }
-  ]
-}
+// 验证规则
+const userRules = computed(() => ({
+  name: ValidationRules.username(),
+  email: ValidationRules.email(),
+  password: props.isEdit ? [] : ValidationRules.password(),
+  confirmPassword: props.isEdit ? [] : ValidationRules.confirmPassword(userForm.password),
+  realName: ValidationRules.realName(),
+  phone: ValidationRules.phone(),
+  gender: ValidationRules.gender(),
+  organizationUnitId: ValidationRules.organizationUnit(),
+  birthDate: ValidationRules.birthDate()
+}))
 
 const dialogTitle = computed(() => props.isEdit ? '编辑用户' : '新建用户')
 
-// 计算年龄的函数
-const calculateAge = (birthDate: string | Date): number => {
-  if (!birthDate) return 0
-  
-  const birth = new Date(birthDate)
-  const today = new Date()
-  
-  let age = today.getFullYear() - birth.getFullYear()
-  const monthDiff = today.getMonth() - birth.getMonth()
-  
-  // 如果还没过生日，年龄减1
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
-  
-  return age > 0 ? age : 0
-}
+// 使用工具函数计算年龄
+const calculateAge = DateFormatter.calculateAge
 
 // 监听出生日期变化，自动计算年龄
 watch(() => userForm.birthDate, (newBirthDate) => {
@@ -362,40 +329,39 @@ const handleSubmit = async () => {
   
   try {
     await userFormRef.value.validate()
-    submitLoading.value = true
     
-    if (props.isEdit) {
-      await updateUser({
-        userId: userForm.userId,
-        name: userForm.name,
-        email: userForm.email,
-        phone: userForm.phone,
-        realName: userForm.realName,
-        status: userForm.status,
-        gender: userForm.gender,
-        age: userForm.age,
-        organizationUnitId: userForm.organizationUnitId,
-        organizationUnitName: userForm.organizationUnitName,
-        birthDate: userForm.birthDate,
-        password: ''
-      })
-      ElMessage.success('更新成功')
-    } else {
-      // 创建用户时，确保密码和确认密码一致
-      if (userForm.password !== userForm.confirmPassword) {
-        ElMessage.error('两次输入的密码不一致')
-        return
+    await withLoading(async () => {
+      if (props.isEdit) {
+        await updateUser({
+          userId: userForm.userId,
+          name: userForm.name,
+          email: userForm.email,
+          phone: userForm.phone,
+          realName: userForm.realName,
+          status: userForm.status,
+          gender: userForm.gender,
+          age: userForm.age,
+          organizationUnitId: userForm.organizationUnitId,
+          organizationUnitName: userForm.organizationUnitName,
+          birthDate: userForm.birthDate,
+          password: ''
+        })
+        ElMessage.success('更新成功')
+      } else {
+        // 创建用户时，确保密码和确认密码一致
+        if (userForm.password !== userForm.confirmPassword) {
+          ElMessage.error('两次输入的密码不一致')
+          return
+        }
+        await register(userForm)
+        ElMessage.success('创建成功')
       }
-      await register(userForm)
-      ElMessage.success('创建成功')
-    }
-    
-    emit('success')
-    emit('update:visible', false)
-  } catch (error: any) {
-    // 错误已在全局拦截器中处理
-  } finally {
-    submitLoading.value = false
+      
+      emit('success')
+      emit('update:visible', false)
+    })
+  } catch (error) {
+    ErrorHandler.handle(error, 'userForm')
   }
 }
 

@@ -1,25 +1,17 @@
 import api from './index'
+import type { 
+  User, 
+  LoginCredentials, 
+  LoginResponse, 
+  PaginationRequest, 
+  PaginationResponse,
+  ImportResult 
+} from '@/types'
 
-// 用户登录
-export interface LoginRequest {
-  username: string
-  password: string
-}
+// 重新导出通用类型
+export type { LoginCredentials, LoginResponse, User } from '@/types'
 
-export interface LoginResponse {
-  token: string
-  refreshToken: string
-  userId: string
-  name: string
-  email: string
-  permissions: string
-}
-
-export const login = (data: LoginRequest) => {
-  return api.post<LoginResponse>('/user/login', data)
-}
-
-// 用户注册
+// 用户注册请求
 export interface RegisterRequest {
   name: string
   email: string
@@ -37,38 +29,7 @@ export interface RegisterRequest {
   userId: string
 }
 
-export interface RegisterResponse {
-  userId: string
-  name: string
-  email: string
-}
-
-export const register = (data: RegisterRequest) => {
-  return api.post<RegisterResponse>('/user/register', data)
-}
-
-// 获取用户资料
-export interface UserProfileResponse {
-  userId: string
-  name: string
-  phone: string
-  roles: string[]
-  realName: string
-  status: number
-  email: string
-  createdAt: string
-  birthDate: string
-  idType: string
-  organizationUnitId: number
-  organizationUnitName: string
-  gender: string
-}
-
-export const getUserProfile = (userId: string) => {
-  return api.get<UserProfileResponse>(`/user/profile/${userId}`)
-}
-
-// 更新用户信息
+// 更新用户请求
 export interface UpdateUserRequest {
   userId: string
   name: string
@@ -84,75 +45,89 @@ export interface UpdateUserRequest {
   password: string
 }
 
-
-export const updateUser = ( data: UpdateUserRequest) => {
-  return api.put('/user/update', data)
-}
-
-// 重置密码
-export const resetPassword = (userId: string) => {
-  return api.put(`/user/password-reset`, { userId })
-}
-
-// 更新用户角色
+// 更新用户角色请求
 export interface UpdateUserRolesRequest {
-  roleIds: string[],
+  roleIds: string[]
   userId: string
 }
 
-export const updateUserRoles = ( data: UpdateUserRolesRequest) => {
-  return api.put(`/users/update-roles`, data)
-}
-
-// 获取用户列表
-export interface GetUsersRequest {
-  pageIndex: number
-  pageSize: number
+// 获取用户列表请求
+export interface GetUsersRequest extends PaginationRequest {
   keyword?: string
   status?: number
   organizationUnitId?: number
-  countTotal:boolean
 }
 
-export interface UserInfo {
-  userId: string;
-  name: string;
-  phone: string;
-  roles: string[];
-  realName: string;
-  status: number;
-  email: string;
-  createdAt: string;
-  gender: string;
-  age: number;
-  organizationUnitId: number;
-  organizationUnitName: string;
-  birthDate: string;
+// 批量导入用户数据
+export interface BatchImportUsersData {
+  file: File
+  organizationUnitId?: number
+  organizationUnitName?: string
+  roleIds?: string[]
 }
 
-export interface GetUsersResponse {
-  items: UserInfo[]
-  total: number
-  pageIndex: number
-  pageSize: number
+// ==================== API 方法 ====================
+
+/**
+ * 用户登录
+ */
+export const login = (data: LoginCredentials) => {
+  return api.post<LoginResponse>('/user/login', data)
 }
 
+/**
+ * 用户注册
+ */
+export const register = (data: RegisterRequest) => {
+  return api.post<User>('/user/register', data)
+}
+
+/**
+ * 获取用户资料
+ */
+export const getUserProfile = (userId: string) => {
+  return api.get<User>(`/user/profile/${userId}`)
+}
+
+/**
+ * 更新用户信息
+ */
+export const updateUser = (data: UpdateUserRequest) => {
+  return api.put('/user/update', data)
+}
+
+/**
+ * 重置用户密码
+ */
+export const resetPassword = (userId: string) => {
+  return api.put('/user/password-reset', { userId })
+}
+
+/**
+ * 更新用户角色
+ */
+export const updateUserRoles = (data: UpdateUserRolesRequest) => {
+  return api.put('/users/update-roles', data)
+}
+
+/**
+ * 获取用户列表
+ */
 export const getUsers = (params: GetUsersRequest) => {
-  return api.get<GetUsersResponse>('/users', { params })
+  return api.get<PaginationResponse<User>>('/users', { params })
 }
 
-
-
-// 删除用户
+/**
+ * 删除用户
+ */
 export const deleteUser = (userId: string) => {
   return api.delete(`/users/${userId}`)
 }
 
-
-
-// 下载用户导入模板
-export const downloadUserTemplate = () => {
-  // 通过Vite代理访问后端静态文件
+/**
+ * 下载用户导入模板
+ */
+export const downloadUserTemplate = (): Promise<Blob> => {
   const templateUrl = '/Downloads/ExcelTemplates/users_template.xlsx'
   
   return fetch(templateUrl, {
@@ -168,29 +143,9 @@ export const downloadUserTemplate = () => {
   })
 }
 
-// 批量导入用户
-export interface BatchImportUsersRequest {
-  file: File
-}
-
-export interface BatchImportUsersResponse {
-  successCount: number
-  failCount: number
-  totalCount: number
-  failedRows: {
-    row: number
-    errors: string[]
-    data: any
-  }[]
-}
-
-export interface BatchImportUsersData {
-  file: File
-  organizationUnitId?: number
-  organizationUnitName?: string
-  roleIds?: string[]
-}
-
+/**
+ * 批量导入用户
+ */
 export const batchImportUsers = (data: BatchImportUsersData) => {
   const formData = new FormData()
   formData.append('file', data.file)
@@ -202,13 +157,13 @@ export const batchImportUsers = (data: BatchImportUsersData) => {
     formData.append('organizationUnitName', data.organizationUnitName)
   }
   
-  if (data.roleIds && data.roleIds.length > 0) {
+  if (data.roleIds?.length) {
     data.roleIds.forEach(roleId => {
       formData.append('roleIds', roleId)
     })
   }
   
-  return api.post<BatchImportUsersResponse>('/users/batch-import', formData, {
+  return api.post<ImportResult>('/users/batch-import', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }

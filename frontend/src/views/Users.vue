@@ -8,7 +8,7 @@
           <p class="subtitle">管理系统中的所有用户账户和权限</p>
         </div>
         <el-button 
-          v-permission="['UserCreate']"
+          v-permission="[PERMISSIONS.USER_CREATE]"
           type="primary" 
           size="large"
           class="create-btn"
@@ -30,31 +30,31 @@
           </h2>
         </div>
         <div class="search-wrapper">
-          <el-form :inline="true" :model="searchForm" class="search-form">
+          <el-form :inline="true" :model="searchParams" class="search-form">
             <el-form-item label="搜索">
               <el-input
-                v-model="searchForm.keyword"
+                v-model="searchParams.keyword"
                 placeholder="请输入用户名"
                 clearable
                 class="search-input"
                 :prefix-icon="Search"
-                @keyup.enter="handleSearch"
+                @keyup.enter="() => handleSearch()"
               />
             </el-form-item>
             <el-form-item label="状态">
               <el-select 
-                v-model="searchForm.status" 
+                v-model="searchParams.status" 
                 placeholder="请选择状态" 
                 clearable 
                 class="status-select"
               >
-                <el-option label="启用" value="1" />
-                <el-option label="禁用" value="0" />
+                <el-option label="启用" :value="USER_STATUS.ENABLED" />
+                <el-option label="禁用" :value="USER_STATUS.DISABLED" />
               </el-select>
             </el-form-item>
             <el-form-item label="组织架构">
               <el-tree-select
-                v-model="searchForm.organizationUnitId"
+                v-model="searchParams.organizationUnitId"
                 :data="organizationTreeOptions"
                 placeholder="请选择组织架构"
                 clearable
@@ -70,7 +70,7 @@
             </el-form-item>
             <el-form-item>
               <div class="action-buttons">
-                <el-button type="primary" class="search-btn" @click="handleSearch" icon="Search">
+                <el-button type="primary" class="search-btn" @click="() => handleSearch()" icon="Search">
                   搜索 
                 </el-button>
                 <!-- <el-button class="reset-btn" @click="handleReset">
@@ -285,8 +285,8 @@
               :page-sizes="[10, 20, 50, 100]"
               layout="total, sizes, prev, pager, next, jumper"
               class="pagination"
-              @update:page-size="handleSizeChange"
-              @update:current-page="handleCurrentChange"
+              @update:page-size="handlePageSizeChange"
+              @update:current-page="handlePageCurrentChange"
             />
           </div>
         </div>
@@ -322,49 +322,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import {
   Search, 
-  Refresh, 
-  Upload, 
   Edit, 
   Delete, 
   Setting, 
   OfficeBuilding, 
   Clock, 
-  DocumentRemove
+  DocumentRemove,
+  Refresh
 } from '@element-plus/icons-vue'
-import { resetPassword, getUsers, deleteUser, downloadUserTemplate, type UserInfo } from '@/api/user'
+import { resetPassword, getUsers, deleteUser, downloadUserTemplate, type GetUsersRequest } from '@/api/user'
 import { UserFormDialog, UserRoleAssignDialog, UserImportDialog } from '@/components'
-import { getAllRoles, type RoleInfo } from '@/api/role'
-import { organizationApi, type OrganizationUnit, type OrganizationUnitTree } from '@/api/organization'
+import { getAllRoles } from '@/api/role'
+import { organizationApi, type OrganizationUnitTree } from '@/api/organization'
+import type { User, Role, OrganizationUnit } from '@/types'
+import { useTable, useConfirm } from '@/composables'
+import { DateFormatter } from '@/utils/format'
+import { ErrorHandler } from '@/utils/error'
 import { hasPermission } from '@/utils/permission'
+import { PERMISSIONS, USER_STATUS } from '@/constants'
 
-const loading = ref(false)
+// 对话框状态
 const dialogVisible = ref(false)
 const roleDialogVisible = ref(false)
 const importDialogVisible = ref(false)
 const isEdit = ref(false)
-const currentUser = ref<any>(null)
+const currentUser = ref<User | null>(null)
 
-const users = ref<UserInfo[]>([])
-const selectedUsers = ref<UserInfo[]>([])
-const allRoles = ref<RoleInfo[]>([])
+// 角色和组织架构数据
+const allRoles = ref<Role[]>([])
 const organizationOptions = ref<OrganizationUnit[]>([])
 const organizationTreeOptions = ref<OrganizationUnitTree[]>([])
 
-const searchForm = reactive({
+// 使用表格Composable
+const {
+  data: users,
+  selectedRows: selectedUsers,
+  loading,
+  pagination,
+  searchParams,
+  loadData,
+  handleSearch,
+  handleSelectionChange,
+  refresh,
+  handlePageSizeChange,
+  handlePageCurrentChange
+} = useTable<User>(async (params: GetUsersRequest) => {
+  const response = await getUsers(params)
+  return response.data
+})
+
+// 扩展搜索参数类型
+Object.assign(searchParams, {
   keyword: '',
   status: null as number | null,
   organizationUnitId: null as number | null
 })
 
-const pagination = reactive({
-  pageIndex: 1,
-  pageSize: 10,
-  total: 0
-})
+// 确认对话框
+const { confirmDelete, confirmBatchDelete } = useConfirm()
 
 
 
@@ -390,7 +409,7 @@ const findOrganizationById = (treeData: OrganizationUnitTree[], id: number): Org
 
 const loadOrganizationUnits = async () => {
   // 检查是否有权限
-  if (!hasPermission(['OrganizationUnitView'])) {
+  if (!hasPermission([PERMISSIONS.ORG_VIEW])) {
     return
   }
 
@@ -403,35 +422,16 @@ const loadOrganizationUnits = async () => {
     const treeResponse = await organizationApi.getTree(true)
     organizationTreeOptions.value = treeResponse.data
   } catch (error) {
-    // 错误已在全局拦截器中处理
+    ErrorHandler.handle(error, 'loadOrganizationUnits')
   }
 }
 
-const loadUsers = async () => {
-  loading.value = true
-  try {
-    const response = await getUsers({
-      pageIndex: pagination.pageIndex,
-      pageSize: pagination.pageSize,
-      keyword: searchForm.keyword || undefined,
-      status: searchForm.status || undefined,
-      organizationUnitId: searchForm.organizationUnitId || undefined,
-      countTotal:true
-    })
-    users.value = response.data.items
-    pagination.total = response.data.total
-  } catch (error: any) {
-    // 错误已在全局拦截器中处理
-  } finally {
-    loading.value = false
-  }
-}
+// loadUsers已被useTable Composable替代，删除此方法
 
 const loadRoles = async () => {
-  
   // 检查是否有权限
-  if (!hasPermission(['RoleView'])) {
-  return
+  if (!hasPermission([PERMISSIONS.ROLE_VIEW])) {
+    return
   }
 
   try {
@@ -442,37 +442,11 @@ const loadRoles = async () => {
     })
     allRoles.value = response.data.items
   } catch (error) {
-    // 错误已在全局拦截器中处理
+    ErrorHandler.handle(error, 'loadRoles')
   }
 }
 
-const handleSearch = () => {
-  pagination.pageIndex = 1
-  loadUsers()
-}
-
-const handleReset = () => {
-  searchForm.keyword = ''
-  searchForm.status = null
-  searchForm.organizationUnitId = null
-  pagination.pageIndex = 1
-  loadUsers()
-}
-
-const handleSizeChange = (size: number) => {
-  pagination.pageSize = size
-  pagination.pageIndex = 1
-  loadUsers()
-}
-
-const handleCurrentChange = (page: number) => {
-  pagination.pageIndex = page
-  loadUsers()
-}
-
-const handleSelectionChange = (selection: UserInfo[]) => {
-  selectedUsers.value = selection
-}
+// handleSearch, handleSelectionChange等方法已被useTable Composable提供，删除重复方法
 
 const showCreateDialog = () => {
   isEdit.value = false
@@ -480,51 +454,47 @@ const showCreateDialog = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (user: UserInfo) => {
+const handleEdit = (user: User) => {
   isEdit.value = true
   currentUser.value = user
   dialogVisible.value = true
 }
 
-const handleResetPassword = async (user: UserInfo) => {
-  await ElMessageBox.confirm(`确定要重置用户"${user.name}"的密码吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-  await resetPassword(user.userId)
-  ElMessage.success('重置成功')
+const handleResetPassword = async (user: User) => {
+  try {
+    const confirmed = await confirmDelete(`重置用户"${user.name}"的密码`)
+    if (confirmed) {
+      await resetPassword(user.userId)
+      ElMessage.success('重置成功')
+    }
+  } catch (error) {
+    ErrorHandler.handle(error, 'resetPassword')
+  }
 }
 
-const handleRoles = (user: UserInfo) => {
+const handleRoles = (user: User) => {
   currentUser.value = user
   roleDialogVisible.value = true
 }
 
 
 
-const handleDelete = async (user: UserInfo) => {
+const handleDelete = async (user: User) => {
   try {
-    await ElMessageBox.confirm(`确定要删除用户"${user.name}"吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await deleteUser(user.userId)
-    ElMessage.success('删除成功')
-    loadUsers()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      // 错误已在全局拦截器中处理
+    const confirmed = await confirmDelete(user.name)
+    if (confirmed) {
+      await deleteUser(user.userId)
+      ElMessage.success('删除成功')
+      refresh()
     }
+  } catch (error) {
+    ErrorHandler.handle(error, 'deleteUser')
   }
 }
 
 
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString('zh-CN')
-}
+const formatDate = (dateString: string) => DateFormatter.toDateTimeString(dateString)
 
 // 下载模板
 const handleDownloadTemplate = async () => {
@@ -554,14 +524,17 @@ const handleBatchDelete = async () => {
   }
   
   try {
-    for (const user of selectedUsers.value) {
-       await deleteUser(user.userId)
+    const confirmed = await confirmBatchDelete(selectedUsers.value.length)
+    if (confirmed) {
+      for (const user of selectedUsers.value) {
+        await deleteUser(user.userId)
+      }
+      ElMessage.success('删除成功')
+      refresh()
     }
-    ElMessage.success('删除成功')
-    loadUsers()
-  } catch (error: any) {
-   // ElMessage.error('删除失败')
-    loadUsers()
+  } catch (error) {
+    ErrorHandler.handle(error, 'batchDelete')
+    refresh()
   }
 }
 
@@ -575,9 +548,10 @@ const handleBatchResetPassword = async () => {
       await resetPassword(user.userId)
     }
     ElMessage.success('重置密码成功')
-    loadUsers()
-  } catch (error: any) {
-    loadUsers()
+    refresh()
+  } catch (error) {
+    ErrorHandler.handle(error, 'batchResetPassword')
+    refresh()
   }
 }
 
@@ -588,23 +562,25 @@ const showImportDialog = () => {
 
 // 用户表单成功处理
 const handleUserFormSuccess = () => {
-  loadUsers()
+  refresh()
 }
 
 // 角色分配成功处理
 const handleRoleAssignSuccess = () => {
-  loadUsers()
+  refresh()
 }
 
 // 导入成功处理
 const handleImportSuccess = () => {
-  loadUsers()
+  refresh()
 }
 
-onMounted(() => {
-  loadUsers()
-  loadRoles()
-  loadOrganizationUnits()
+onMounted(async () => {
+  await Promise.all([
+    loadData(), // 加载用户数据
+    loadRoles(),
+    loadOrganizationUnits()
+  ])
 })
 </script>
 

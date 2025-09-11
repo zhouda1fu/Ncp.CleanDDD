@@ -2,11 +2,13 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
+import { apiConfig } from '@/config'
+import type { BaseResponse } from '@/types'
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000,
+  baseURL: apiConfig.baseURL,
+  timeout: apiConfig.timeout,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -32,16 +34,17 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response) => {
-    if(response.data.success){
+    const data = response.data as BaseResponse
+    if (data.success) {
       return response.data
-    }else{
-        // 处理后端返回的错误格式 {"success":false,"message":"不能删除管理员用户","code":0,"errorData":[]}
-        if (response.data && typeof response.data === 'object' && response.data.message) {
-          ElMessage.error(response.data.message)
-        } else {
-          ElMessage.error('请求失败')
-        }
-        return Promise.reject(response.data)
+    } else {
+      // 处理后端返回的错误格式
+      if (data?.message) {
+        ElMessage.error(data.message)
+      } else {
+        ElMessage.error('请求失败')
+      }
+      return Promise.reject(data)
     }
   },
   (error) => {

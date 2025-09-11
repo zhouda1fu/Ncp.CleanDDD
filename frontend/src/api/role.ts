@@ -1,61 +1,22 @@
 import api from './index'
+import type { Role, PaginationRequest, PaginationResponse } from '@/types'
 
-// 角色信息
-export interface RoleInfo {
-  roleId: string
-  name: string
-  description: string
-  permissionCodes: string[]
-  createdAt: string
-  updatedAt: string
-}
+// 重新导出通用类型
+export type { Role } from '@/types'
 
-// 分页查询参数
-export interface RoleQueryInput {
-  pageIndex: number
-  pageSize: number
+// 角色查询请求
+export interface RoleQueryRequest extends PaginationRequest {
   name?: string
-  countTotal:boolean
 }
 
-// 分页数据
-export interface PagedData<T> {
-  items: T[]
-  total: number
-  pageIndex: number
-  pageSize: number
-}
-
-// 获取所有角色
-export const getAllRoles = (params: RoleQueryInput) => {
-  return api.get<PagedData<RoleInfo>>('/roles', { params })
-}
-
-// 获取单个角色
-export const getRole = (roleId: string) => {
-  return api.get<RoleInfo>(`/roles/${roleId}`)
-}
-
-// 创建角色
+// 创建角色请求
 export interface CreateRoleRequest {
   name: string
   description: string
   permissionCodes: string[]
 }
 
-
-
-export interface CreateRoleResponse {
-  roleId: string
-  name: string
-  description: string
-}
-
-export const createRole = (data: CreateRoleRequest) => {
-  return api.post<CreateRoleResponse>('/roles', data)
-}
-
-// 更新角色
+// 更新角色请求
 export interface UpdateRoleRequest {
   roleId: string
   name: string
@@ -63,12 +24,39 @@ export interface UpdateRoleRequest {
   permissionCodes: string[]
 }
 
+// ==================== API 方法 ====================
 
-// 删除角色
-export const deleteRole = (roleId: string) => {
-  return api.delete(`/roles/${roleId}`)
-} 
+/**
+ * 获取角色列表
+ */
+export const getAllRoles = (params: RoleQueryRequest) => {
+  return api.get<PaginationResponse<Role>>('/roles', { params })
+}
 
+/**
+ * 获取单个角色
+ */
+export const getRole = (roleId: string) => {
+  return api.get<Role>(`/roles/${roleId}`)
+}
+
+/**
+ * 创建角色
+ */
+export const createRole = (data: CreateRoleRequest) => {
+  return api.post<Role>('/roles', data)
+}
+
+/**
+ * 更新角色
+ */
 export const updateRole = (data: UpdateRoleRequest) => {
   return api.put('/roles/update', data)
+}
+
+/**
+ * 删除角色
+ */
+export const deleteRole = (roleId: string) => {
+  return api.delete(`/roles/${roleId}`)
 } 

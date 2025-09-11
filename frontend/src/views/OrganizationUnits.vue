@@ -7,7 +7,7 @@
           <p class="subtitle">管理您的组织架构层次</p>
         </div>
         <el-button 
-          v-permission="['OrganizationUnitCreate']"
+          v-permission="[PERMISSIONS.ORG_CREATE]"
           type="primary" 
           size="large"
           class="create-btn"
@@ -44,7 +44,7 @@
                 </div>
                 <div class="node-actions">
                   <el-button 
-                    v-permission="['OrganizationUnitEdit']"
+                    v-permission="[PERMISSIONS.ORG_EDIT]"
                     size="small" 
                     type="primary" 
                     :icon="Edit"
@@ -53,7 +53,7 @@
                     @click.stop="editOrganization(data)"
                   />
                   <el-button 
-                    v-permission="['OrganizationUnitDelete']"
+                    v-permission="[PERMISSIONS.ORG_DELETE]"
                     size="small" 
                     type="danger" 
                     :icon="Delete"
@@ -228,7 +228,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, type FormInstance } from 'element-plus'
 import { 
   Edit, 
   Delete, 
@@ -239,13 +239,24 @@ import {
   DocumentRemove,
   Rank
 } from '@element-plus/icons-vue'
-import { organizationApi, type OrganizationUnit, type OrganizationUnitTree } from '@/api/organization'
+import { organizationApi, type CreateOrganizationUnitRequest, type UpdateOrganizationUnitRequest } from '@/api/organization'
+import type { OrganizationUnit, OrganizationUnitTree } from '@/types'
+import { useConfirm, useLoading } from '@/composables'
+import { DateFormatter } from '@/utils/format'
+import { ErrorHandler } from '@/utils/error'
+import { PERMISSIONS } from '@/constants'
 
+// 数据状态
 const organizationTree = ref<OrganizationUnitTree[]>([])
 const organizationList = ref<OrganizationUnit[]>([])
 const showCreateDialog = ref(false)
 const editingOrganization = ref<OrganizationUnit | null>(null)
+const { withLoading } = useLoading()
 
+// 确认对话框
+const { confirmDelete } = useConfirm()
+
+// 表单数据
 const form = reactive({
   name: '',
   description: '',
@@ -253,21 +264,27 @@ const form = reactive({
   sortOrder: 1
 })
 
-const rules = {
+// 验证规则
+const rules = computed(() => ({
   name: [
-    { required: true, message: '请输入组织架构名称', trigger: 'blur' }
+    { required: true, message: '请输入组织架构名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '名称长度应为 2-50 个字符', trigger: 'blur' }
+  ],
+  description: [
+    { max: 200, message: '描述长度不能超过 200 个字符', trigger: 'blur' }
   ],
   sortOrder: [
-    { required: true, message: '请输入排序', trigger: 'blur' }
+    { required: true, message: '请输入排序', trigger: 'blur' },
+    { type: 'number', min: 1, max: 999, message: '排序值应为 1-999', trigger: 'blur' }
   ]
-}
+}))
 
 const treeProps = {
   children: 'children',
   label: 'name'
 }
 
-const formRef = ref()
+const formRef = ref<FormInstance>()
 
 // 获取组织架构选项（排除当前编辑的组织架构及其子组织）
 const organizationOptions = computed(() => {
@@ -291,10 +308,8 @@ const loadData = async () => {
     ])
     organizationTree.value = treeData.data
     organizationList.value = listData.data
-    console.log("organizationTree.value", organizationTree.value)
-    console.log("organizationList.value", organizationList.value)
   } catch (error) {
-    ElMessage.error('加载数据失败')
+    ErrorHandler.handle(error, 'loadOrganizationData')
   }
 }
 
@@ -305,31 +320,22 @@ const handleNodeClick = (data: OrganizationUnitTree) => {
 const editOrganization = (organization: OrganizationUnit) => {
   editingOrganization.value = organization
   form.name = organization.name
-  form.description = organization.description
-  form.parentId = organization.parentId
+  form.description = organization.description || ''
+  form.parentId = organization.parentId || undefined
   form.sortOrder = organization.sortOrder
   showCreateDialog.value = true
 }
 
 const deleteOrganization = async (organization: OrganizationUnit) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除组织架构"${organization.name}"吗？`,
-      '确认删除',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-    
-    await organizationApi.delete(organization.id)
-    ElMessage.success('删除成功')
-    loadData()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+    const confirmed = await confirmDelete(organization.name)
+    if (confirmed) {
+      await organizationApi.delete(organization.id)
+      ElMessage.success('删除成功')
+      loadData()
     }
+  } catch (error) {
+    ErrorHandler.handle(error, 'deleteOrganization')
   }
 }
 
@@ -339,30 +345,34 @@ const submitForm = async () => {
   try {
     await formRef.value.validate()
     
-    if (editingOrganization.value) {
-      await organizationApi.update({
-        id: editingOrganization.value.id,
-        name: form.name,
-        description: form.description,
-        parentId: form.parentId,
-        sortOrder: form.sortOrder
-      })
-      ElMessage.success('更新成功')
-    } else {
-      await organizationApi.create({
-        name: form.name,
-        description: form.description,
-        parentId: form.parentId,
-        sortOrder: form.sortOrder
-      })
-      ElMessage.success('创建成功')
-    }
-    
-    showCreateDialog.value = false
-    resetForm()
-    loadData()
+    await withLoading(async () => {
+      if (editingOrganization.value) {
+        const updateData: UpdateOrganizationUnitRequest = {
+          id: editingOrganization.value.id,
+          name: form.name,
+          description: form.description,
+          parentId: form.parentId,
+          sortOrder: form.sortOrder
+        }
+        await organizationApi.update(updateData)
+        ElMessage.success('更新成功')
+      } else {
+        const createData: CreateOrganizationUnitRequest = {
+          name: form.name,
+          description: form.description,
+          parentId: form.parentId,
+          sortOrder: form.sortOrder
+        }
+        await organizationApi.create(createData)
+        ElMessage.success('创建成功')
+      }
+      
+      showCreateDialog.value = false
+      resetForm()
+      loadData()
+    })
   } catch (error) {
-    ElMessage.error('操作失败')
+    ErrorHandler.handle(error, 'organizationForm')
   }
 }
 
@@ -380,9 +390,7 @@ const resetFormAndClose = () => {
   resetForm()
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString()
-}
+const formatDate = (dateString: string) => DateFormatter.toDateTimeString(dateString)
 </script>
 
 <style scoped>

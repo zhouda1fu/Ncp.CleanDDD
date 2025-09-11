@@ -29,20 +29,20 @@
           </h2>
         </div>
         <div class="search-wrapper">
-          <el-form :inline="true" :model="searchForm" class="search-form">
+          <el-form :inline="true" :model="searchParams" class="search-form">
             <el-form-item label="搜索">
               <el-input
-                v-model="searchForm.keyword"
+                v-model="searchParams.name"
                 placeholder="请输入角色名称"
                 clearable
                 class="search-input"
                 :prefix-icon="Search"
-                @keyup.enter="handleSearch"
+                @keyup.enter="() => handleSearch()"
               />
             </el-form-item>
             <el-form-item>
               <div class="action-buttons">
-                <el-button type="primary" class="search-btn" @click="handleSearch"  icon="Search">
+                <el-button type="primary" class="search-btn" @click="() => handleSearch()"  icon="Search">
                   搜索 
                 </el-button>
                 <el-button class="reset-btn" @click="handleReset"  icon="Refresh">
@@ -153,8 +153,8 @@
               :page-sizes="[10, 20, 50, 100]"
               layout="total, sizes, prev, pager, next, jumper"
               class="pagination"
-              @update:page-size="handleSizeChange"
-              @update:current-page="handleCurrentChange"
+              @update:page-size="handlePageSizeChange"
+              @update:current-page="handlePageCurrentChange"
             />
           </div>
         </div>
@@ -267,62 +267,82 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, type FormInstance } from 'element-plus'
 import { 
-  Plus, 
   Search, 
-  Refresh, 
   Delete, 
   Edit, 
   Setting, 
   Clock, 
   Key, 
   Select, 
-  Close, 
-  Check,
+  Close,
   DocumentRemove
 } from '@element-plus/icons-vue'
 
-import { getAllRoles, createRole, updateRole, deleteRole, type RoleInfo, type CreateRoleRequest } from '@/api/role'
-import { getPermissionTree,type PermissionItem } from '@/api/permission'
+import { getAllRoles, createRole, updateRole, deleteRole, type RoleQueryRequest } from '@/api/role'
+import { getPermissionTree } from '@/api/permission'
+import type { Role, Permission, PermissionGroup } from '@/types'
+import { useTable, useConfirm, useLoading } from '@/composables'
+import { DateFormatter } from '@/utils/format'
+import { ErrorHandler } from '@/utils/error'
 
-const loading = ref(false)
-const submitLoading = ref(false)
+// 对话框状态
+const { loading: submitLoading, withLoading } = useLoading()
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const currentRoleId = ref('')
 
-const roles = ref<RoleInfo[]>([])
-const selectedRoles = ref<RoleInfo[]>([])
-const permissionTreeData = ref<PermissionItem[]>([])
+// 权限数据
+const permissionTreeData = ref<Permission[]>([])
 const permissionTreeRef = ref()
 
-const searchForm = reactive({
-  keyword: ''
+// 使用表格Composable
+const {
+  data: roles,
+  selectedRows: selectedRoles,
+  loading,
+  pagination,
+  searchParams,
+  loadData,
+  handleSearch,
+  handleSelectionChange,
+  refresh,
+  handlePageSizeChange,
+  handlePageCurrentChange
+} = useTable<Role>(async (params: RoleQueryRequest) => {
+  const response = await getAllRoles(params)
+  return response.data
 })
 
-const pagination = reactive({
-  pageIndex: 1,
-  pageSize: 10,
-  total: 0
+// 扩展搜索参数类型
+Object.assign(searchParams, {
+  name: ''
 })
 
-const roleForm = reactive<CreateRoleRequest>({
+// 确认对话框
+const { confirmDelete } = useConfirm()
+
+// 角色表单
+const roleForm = reactive({
   name: '',
   description: '',
-  permissionCodes: []
+  permissionCodes: [] as string[]
 })
 
 const roleFormRef = ref<FormInstance>()
 
-const roleRules: FormRules = {
+// 验证规则
+const roleRules = computed(() => ({
   name: [
-    { required: true, message: '请输入角色名称', trigger: 'onBlur' }
+    { required: true, message: '请输入角色名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '角色名称长度应为 2-50 个字符', trigger: 'blur' }
   ],
   description: [
-    { required: true, message: '请输入角色描述', trigger: 'onBlur' }
+    { required: true, message: '请输入角色描述', trigger: 'blur' },
+    { max: 200, message: '描述长度不能超过 200 个字符', trigger: 'blur' }
   ]
-}
+}))
 
 const treeProps = {
   children: 'children',
@@ -336,64 +356,28 @@ const loadPermissionTree = async () => {
   try {
     const response = await getPermissionTree()
     // 将权限组转换为树形数据，保持组结构
-    permissionTreeData.value = response.data.map(group => ({
+    permissionTreeData.value = response.data.map((group: PermissionGroup) => ({
       code: group.name,
       displayName: group.name,
       isEnabled: true,
       children: group.permissions
     }))
   } catch (error) {
-    ElMessage.error('加载权限数据失败')
+    ErrorHandler.handle(error, 'loadPermissionTree')
   }
 }
 
+// loadRoles已被useTable Composable替代
 
-
-const loadRoles = async () => {
-  loading.value = true
-  try {
-    const response = await getAllRoles({
-      pageIndex: pagination.pageIndex,
-      pageSize: pagination.pageSize,
-      name: searchForm.keyword || undefined,
-      countTotal:true
-    })
-    roles.value = response.data.items
-    pagination.total = response.data.total
-  } catch (error: any) {
-    // 错误已在全局拦截器中处理
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleSearch = () => {
-  pagination.pageIndex = 1
-  loadRoles()
-}
-
+// 重置搜索
 const handleReset = () => {
-  searchForm.keyword = ''
-  pagination.pageIndex = 1
-  loadRoles()
+  Object.keys(searchParams).forEach(key => {
+    searchParams[key] = ''
+  })
+  handleSearch()
 }
 
-const handleSizeChange = (size: number) => {
-  pagination.pageSize = size
-  pagination.pageIndex = 1
-  loadRoles()
-}
-
-const handleCurrentChange = (page: number) => {
-  pagination.pageIndex = page
-  loadRoles()
-}
-
-const handleSelectionChange = (selection: RoleInfo[]) => {
-  selectedRoles.value = selection
-}
-
-const handlePermissionCheck = (_: PermissionItem, checkedInfo: any) => {
+const handlePermissionCheck = (_: Permission, checkedInfo: any) => {
   // 获取所有选中的权限码
   const checkedKeys = checkedInfo.checkedKeys || []
   
@@ -417,7 +401,7 @@ const showCreateDialog = () => {
   })
 }
 
-const handleEdit = (role: RoleInfo) => {
+const handleEdit = (role: Role) => {
   isEdit.value = true
   currentRoleId.value = role.roleId
   roleForm.name = role.name
@@ -433,18 +417,16 @@ const handleEdit = (role: RoleInfo) => {
   })
 }
 
-const handleDelete = async (role: RoleInfo) => {
+const handleDelete = async (role: Role) => {
   try {
-    await ElMessageBox.confirm(`确定要删除角色"${role.name}"吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await deleteRole(role.roleId)
-    ElMessage.success('删除成功')
-    loadRoles()
-  } catch {
-    // 用户取消
+    const confirmed = await confirmDelete(role.name)
+    if (confirmed) {
+      await deleteRole(role.roleId)
+      ElMessage.success('删除成功')
+      refresh()
+    }
+  } catch (error) {
+    ErrorHandler.handle(error, 'deleteRole')
   }
 }
 
@@ -453,25 +435,24 @@ const handleSubmit = async () => {
   
   try {
     await roleFormRef.value.validate()
-    submitLoading.value = true
     
-    if (isEdit.value) {
-      await updateRole({
-        roleId: currentRoleId.value,
-        ...roleForm
-      })
-      ElMessage.success('更新成功')
-    } else {
-      await createRole(roleForm)
-      ElMessage.success('创建成功')
-    }
-    
-    dialogVisible.value = false
-    loadRoles()
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '操作失败')
-  } finally {
-    submitLoading.value = false
+    await withLoading(async () => {
+      if (isEdit.value) {
+        await updateRole({
+          roleId: currentRoleId.value,
+          ...roleForm
+        })
+        ElMessage.success('更新成功')
+      } else {
+        await createRole(roleForm)
+        ElMessage.success('创建成功')
+      }
+      
+      dialogVisible.value = false
+      refresh()
+    })
+  } catch (error) {
+    ErrorHandler.handle(error, 'roleForm')
   }
 }
 
@@ -483,12 +464,10 @@ const handleDialogClose = () => {
   }
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString('zh-CN')
-}
+const formatDate = (dateString: string) => DateFormatter.toDateTimeString(dateString)
 
 // 递归获取所有权限码
-const getAllPermissionCodes = (items: PermissionItem[]): string[] => {
+const getAllPermissionCodes = (items: Permission[]): string[] => {
   const codes: string[] = []
   items.forEach(item => {
     if (item.children && item.children.length > 0) {
@@ -511,9 +490,11 @@ const handleUnselectAll = () => {
   roleForm.permissionCodes = []
 }
 
-onMounted(() => {
-  loadRoles()
-  loadPermissionTree()
+onMounted(async () => {
+  await Promise.all([
+    loadData(), // 加载角色数据
+    loadPermissionTree()
+  ])
 })
 </script>
 

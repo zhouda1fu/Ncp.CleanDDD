@@ -2,29 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getPermissionTree } from '@/api/permission'
 import { menuRouteConfigs, convertToMenuPermission } from '@/router/menu-config'
+import { PERMISSIONS, STORAGE_KEYS } from '@/constants'
+import type { Permission, PermissionGroup, MenuPermission } from '@/types'
 
-// 权限项接口
-export interface PermissionItem {
-  code: string
-  displayName: string
-  children: PermissionItem[]
-  isEnabled: boolean
-}
-
-// 权限组接口
-export interface PermissionGroup {
-  name: string
-  permissions: PermissionItem[]
-}
-
-// 菜单权限配置
-export interface MenuPermission {
-  path: string
-  name: string
-  icon: string
-  requiredPermissions: string[]
-  children?: MenuPermission[]
-}
+// 使用统一的类型定义
+export type { Permission as PermissionItem, PermissionGroup, MenuPermission } from '@/types'
 
 export const usePermissionStore = defineStore('permission', () => {
   const userPermissions = ref<string[]>([])
@@ -56,7 +38,7 @@ export const usePermissionStore = defineStore('permission', () => {
     }
     
     // 如果有系统管理员权限，则拥有所有权限
-    if (userPermissions.value.includes('SystemAdmin')) {
+    if (userPermissions.value.includes(PERMISSIONS.SYSTEM_ADMIN)) {
       return true
     }
     
@@ -108,7 +90,7 @@ export const usePermissionStore = defineStore('permission', () => {
 
   // 保存权限到本地存储
   const savePermissionsToStorage = () => {
-    localStorage.setItem('userPermissions', JSON.stringify(userPermissions.value))
+    localStorage.setItem(STORAGE_KEYS.USER_PERMISSIONS, JSON.stringify(userPermissions.value))
   }
 
   return {
