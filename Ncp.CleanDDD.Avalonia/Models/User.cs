@@ -16,11 +16,16 @@ namespace Ncp.CleanDDD.Avalonia.Models
         public int Status { get; set; }
         public string Gender { get; set; } = string.Empty;
         public int Age { get; set; }
-        public int OrganizationUnitId { get; set; }
+        public string OrganizationUnitId { get; set; } = string.Empty;
         public string OrganizationUnitName { get; set; } = string.Empty;
         public DateTime BirthDate { get; set; }
         public List<string> Roles { get; set; } = new();
         public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// 是否选中（用于批量操作）
+        /// </summary>
+        public bool IsSelected { get; set; } = false;
     }
 
     /// <summary>
@@ -56,5 +61,6 @@ namespace Ncp.CleanDDD.Avalonia.Models
         public string Message { get; set; } = string.Empty;
         public int Code { get; set; }
         public T? Data { get; set; }
+        public List<object> ErrorData { get; set; } = new();
     }
 }

@@ -16,18 +16,32 @@ namespace Ncp.CleanDDD.Avalonia.Services
     public class ApiService : IApiService
     {
         private readonly HttpClient _httpClient;
+        private readonly ITokenProvider _tokenProvider;
         private readonly ILogger<ApiService> _logger;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public ApiService(HttpClient httpClient, ILogger<ApiService> logger)
+        public ApiService(HttpClient httpClient, ITokenProvider tokenProvider, ILogger<ApiService> logger)
         {
             _httpClient = httpClient;
+            _tokenProvider = tokenProvider;
             _logger = logger;
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true
             };
+        }
+
+        /// <summary>
+        /// 设置认证token
+        /// </summary>
+        /// <param name="token">JWT token</param>
+        public void SetAuthToken(string token)
+        {
+            if (_tokenProvider is TokenProvider tokenProvider)
+            {
+                tokenProvider.SetToken(token);
+            }
         }
 
         #region 用户管理

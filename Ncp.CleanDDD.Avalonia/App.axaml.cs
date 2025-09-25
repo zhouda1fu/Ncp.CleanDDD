@@ -44,11 +44,21 @@ namespace Ncp.CleanDDD.Avalonia
                 builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
             });
 
+            // 添加Token提供者
+            services.AddSingleton<ITokenProvider, TokenProvider>();
+
             // 添加HTTP客户端
-            services.AddHttpClient<IApiService, ApiService>(client =>
+            services.AddHttpClient<IApiService, ApiService>((serviceProvider, client) =>
             {
                 client.BaseAddress = new Uri("https://localhost:7058"); // 根据实际API地址调整
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
+            })
+            .ConfigurePrimaryHttpMessageHandler((serviceProvider) =>
+            {
+                var tokenProvider = serviceProvider.GetRequiredService<ITokenProvider>();
+                var logger = serviceProvider.GetRequiredService<ILogger<AuthHttpMessageHandler>>();
+                var authHandler = new AuthHttpMessageHandler(new HttpClientHandler(), tokenProvider, logger);
+                return authHandler;
             });
 
             // 添加服务

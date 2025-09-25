@@ -46,6 +46,9 @@ namespace Ncp.CleanDDD.Avalonia.Services
                 {
                     _currentUser = response.Data;
                     
+                    // 设置认证token到HttpClient
+                    _apiService.SetAuthToken(_currentUser.Token);
+                    
                     // 解析权限字符串
                     if (!string.IsNullOrEmpty(_currentUser.Permissions))
                     {
@@ -86,6 +89,9 @@ namespace Ncp.CleanDDD.Avalonia.Services
             }
             finally
             {
+                // 清除认证token
+                _apiService.SetAuthToken(string.Empty);
+                
                 _currentUser = null;
                 _permissions.Clear();
                 OnPropertyChanged(nameof(IsAuthenticated));

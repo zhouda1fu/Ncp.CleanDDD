@@ -131,9 +131,12 @@
                     </Button>
                 </StackPanel>
             </Grid>
+		
         </Border>
 
-        <!-- 现代化用户列表 -->
+	
+
+		<!-- 现代化用户列表 -->
         <Border Grid.Row="2" Background="White" CornerRadius="12" BorderBrush="#e2e8f0" BorderThickness="1" BoxShadow="0 4 12 0 #0A000000" Margin="0,0,0,15">
             <DataGrid ItemsSource="{Binding Users}" 
                       IsReadOnly="True" 

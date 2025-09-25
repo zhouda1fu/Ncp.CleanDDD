@@ -15,68 +15,137 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid>
+    <Grid Background="#f8f9fa">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 顶部导航栏 -->
-        <Border Grid.Row="0" Background="#2c3e50" Padding="10">
+        <!-- 现代化顶部导航栏 -->
+        <Border Grid.Row="0" Background="#667eea" Padding="25,20" BoxShadow="0 4 12 0 #0A000000">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
-                    <TextBlock Text="Ncp.CleanDDD 管理系统" 
-                               FontSize="20" 
-                               FontWeight="Bold" 
-                               Foreground="White" 
-                               VerticalAlignment="Center"/>
+                <!-- 左侧：标题和导航按钮 -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="25">
+                    <!-- 应用标题 -->
+                    <StackPanel Orientation="Horizontal" Spacing="15">
+                        <Border Background="White" CornerRadius="12" Padding="12">
+                            <TextBlock Text="🏢" FontSize="20"/>
+                        </Border>
+                        <StackPanel>
+                            <TextBlock Text="Ncp.CleanDDD" 
+                                       FontSize="24" 
+                                       FontWeight="SemiBold" 
+                                       Foreground="White"/>
+                            <TextBlock Text="管理系统" 
+                                       FontSize="14" 
+                                       Foreground="#e2e8f0"/>
+                        </StackPanel>
+                    </StackPanel>
                     
-                    <Button Content="用户管理" 
-                            Command="{Binding NavigateToUsersCommand}"
-                            IsVisible="{Binding IsLoggedIn}"
-                            Background="#3498db" 
-                            Foreground="White" 
-                            Padding="10,5"/>
-                    
-                    <Button Content="角色管理" 
-                            Command="{Binding NavigateToRolesCommand}"
-                            IsVisible="{Binding IsLoggedIn}"
-                            Background="#9b59b6" 
-                            Foreground="White" 
-                            Padding="10,5"/>
-                    
-                    <Button Content="组织架构" 
-                            Command="{Binding NavigateToOrganizationUnitsCommand}"
-                            IsVisible="{Binding IsLoggedIn}"
-                            Background="#e67e22" 
-                            Foreground="White" 
-                            Padding="10,5"/>
+                    <!-- 现代化导航按钮 -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Command="{Binding NavigateToUsersCommand}"
+                                IsVisible="{Binding IsLoggedIn}"
+                                Background="White" 
+                                Foreground="#667eea" 
+                                Padding="16,10"
+                                CornerRadius="8"
+                                FontSize="14"
+                                FontWeight="SemiBold">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="👥" FontSize="14"/>
+                                <TextBlock Text="用户管理"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding NavigateToRolesCommand}"
+                                IsVisible="{Binding IsLoggedIn}"
+                                Background="White" 
+                                Foreground="#8b5cf6" 
+                                Padding="16,10"
+                                CornerRadius="8"
+                                FontSize="14"
+                                FontWeight="SemiBold">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="👤" FontSize="14"/>
+                                <TextBlock Text="角色管理"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding NavigateToOrganizationUnitsCommand}"
+                                IsVisible="{Binding IsLoggedIn}"
+                                Background="White" 
+                                Foreground="#f59e0b" 
+                                Padding="16,10"
+                                CornerRadius="8"
+                                FontSize="14"
+                                FontWeight="SemiBold">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="🏢" FontSize="14"/>
+                                <TextBlock Text="组织架构"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </StackPanel>
                 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                    <Button Content="登出" 
-                            Command="{Binding LogoutCommand}"
+                <!-- 右侧：用户操作 -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                    <Button Command="{Binding LogoutCommand}"
                             IsVisible="{Binding IsLoggedIn}"
-                            Background="#e74c3c" 
+                            Background="#ef4444" 
                             Foreground="White" 
-                            Padding="10,5"/>
+                            Padding="16,10"
+                            CornerRadius="8"
+                            FontSize="14"
+                            FontWeight="SemiBold">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="🚪" FontSize="14"/>
+                            <TextBlock Text="登出"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- 主内容区域 -->
-        <ContentControl Grid.Row="1" Margin="10" Name="MainContent">
+        <!-- 现代化主内容区域 -->
+        <ContentControl Grid.Row="1" Margin="15" Name="MainContent">
             <ContentControl.Content>
-                <TextBlock Text="请选择页面" 
-                           HorizontalAlignment="Center" 
-                           VerticalAlignment="Center" 
-                           FontSize="16" 
-                           Foreground="Gray"/>
+                <Border Background="White" 
+                        CornerRadius="12" 
+                        BorderBrush="#e2e8f0" 
+                        BorderThickness="1" 
+                        BoxShadow="0 4 12 0 #0A000000"
+                        Padding="40">
+                    <StackPanel HorizontalAlignment="Center" 
+                                VerticalAlignment="Center" 
+                                Spacing="20">
+                        <Border Background="#667eea" 
+                                CornerRadius="20" 
+                                Padding="20"
+                                HorizontalAlignment="Center">
+                            <TextBlock Text="🏢" 
+                                       FontSize="48" 
+                                       HorizontalAlignment="Center"/>
+                        </Border>
+                        <StackPanel HorizontalAlignment="Center" 
+                                    Spacing="8">
+                            <TextBlock Text="欢迎使用 Ncp.CleanDDD 管理系统" 
+                                       FontSize="24" 
+                                       FontWeight="SemiBold" 
+                                       Foreground="#2d3748"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="请从上方导航栏选择要管理的功能模块" 
+                                       FontSize="16" 
+                                       Foreground="#718096"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </ContentControl.Content>
         </ContentControl>
     </Grid>
