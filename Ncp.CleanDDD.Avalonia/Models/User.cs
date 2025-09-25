@@ -21,11 +21,9 @@ namespace Ncp.CleanDDD.Avalonia.Models
         public DateTime BirthDate { get; set; }
         public List<string> Roles { get; set; } = new();
         public DateTime CreatedAt { get; set; }
+        public bool IsSelected { get; set; }
 
-        /// <summary>
-        /// 是否选中（用于批量操作）
-        /// </summary>
-        public bool IsSelected { get; set; } = false;
+      
     }
 
     /// <summary>

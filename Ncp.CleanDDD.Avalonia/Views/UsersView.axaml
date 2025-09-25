@@ -6,6 +6,13 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
              x:Class="Ncp.CleanDDD.Avalonia.Views.UsersView"
              x:DataType="vm:UsersViewModel">
+    
+    <UserControl.Resources>
+        <!-- 状态背景色转换器 -->
+        <vm:StatusToBackgroundConverter x:Key="StatusToBackgroundConverter"/>
+        <!-- 状态图标转换器 -->
+        <vm:StatusToIconConverter x:Key="StatusToIconConverter"/>
+    </UserControl.Resources>
 
     <Design.DataContext>
         <vm:UsersViewModel/>
@@ -137,124 +144,235 @@
 	
 
 		<!-- 现代化用户列表 -->
-        <Border Grid.Row="2" Background="White" CornerRadius="12" BorderBrush="#e2e8f0" BorderThickness="1" BoxShadow="0 4 12 0 #0A000000" Margin="0,0,0,15">
-            <DataGrid ItemsSource="{Binding Users}" 
-                      IsReadOnly="True" 
-                      AutoGenerateColumns="False"
-                      GridLinesVisibility="Horizontal"
-                      HeadersVisibility="Column"
-                      Background="White"
-                      BorderThickness="0"
-                      RowBackground="White"
-                      FontSize="14"
-                      Padding="20">
-            
-            <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="选择" 
-                                        Binding="{Binding IsSelected}" 
-                                        Width="60"/>
+        <Border Grid.Row="2" Background="White" CornerRadius="16" BorderBrush="#e2e8f0" BorderThickness="1" BoxShadow="0 8 25 0 #0F000000" Margin="0,0,0,20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
                 
-                <DataGridTextColumn Header="用户名" 
-                                    Binding="{Binding Name}" 
-                                    Width="120"/>
-                
-                <DataGridTextColumn Header="真实姓名" 
-                                    Binding="{Binding RealName}" 
-                                    Width="120"/>
-                
-                <DataGridTextColumn Header="邮箱" 
-                                    Binding="{Binding Email}" 
-                                    Width="200"/>
-                
-                <DataGridTextColumn Header="手机号" 
-                                    Binding="{Binding Phone}" 
-                                    Width="120"/>
-                
-                <DataGridTextColumn Header="状态" 
-                                    Binding="{Binding Status}" 
-                                    Width="80"/>
-                
-                <DataGridTextColumn Header="组织架构" 
-                                    Binding="{Binding OrganizationUnitName}" 
-                                    Width="150"/>
-                
-                <DataGridTextColumn Header="创建时间" 
-                                    Binding="{Binding CreatedAt, StringFormat='yyyy-MM-dd HH:mm'}" 
-                                    Width="150"/>
-                
-                <DataGridTemplateColumn Header="操作" Width="200">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Button Command="{Binding $parent[DataGrid].DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                        CommandParameter="{Binding}"
-                                        IsEnabled="{Binding $parent[DataGrid].DataContext.CanEditUser, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        Background="#667eea" 
-                                        Foreground="White" 
-                                        Padding="10,6" 
-                                        FontSize="12"
-                                        FontWeight="SemiBold"
-                                        CornerRadius="6">
-                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <TextBlock Text="✏️" FontSize="12"/>
-                                        <TextBlock Text="编辑"/>
-                                    </StackPanel>
-                                </Button>
-                                
-                                <Button Command="{Binding $parent[DataGrid].DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                        CommandParameter="{Binding}"
-                                        IsEnabled="{Binding $parent[DataGrid].DataContext.CanDeleteUser, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        Background="#ef4444" 
-                                        Foreground="White" 
-                                        Padding="10,6" 
-                                        FontSize="12"
-                                        FontWeight="SemiBold"
-                                        CornerRadius="6">
-                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <TextBlock Text="🗑️" FontSize="12"/>
-                                        <TextBlock Text="删除"/>
-                                    </StackPanel>
-                                </Button>
-                                
-                                <Button Command="{Binding $parent[DataGrid].DataContext.ResetPasswordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                        CommandParameter="{Binding}"
-                                        IsEnabled="{Binding $parent[DataGrid].DataContext.CanResetPassword, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        Background="#f59e0b" 
-                                        Foreground="White" 
-                                        Padding="10,6" 
-                                        FontSize="12"
-                                        FontWeight="SemiBold"
-                                        CornerRadius="6">
-                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <TextBlock Text="🔑" FontSize="12"/>
-                                        <TextBlock Text="重置"/>
-                                    </StackPanel>
-                                </Button>
+                <!-- 列表标题栏 -->
+                <Border Grid.Row="0" Background="#f8fafc" CornerRadius="16,16,0,0" BorderBrush="#e2e8f0" BorderThickness="0,0,0,1" Padding="25,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                            <Border Background="#667eea" CornerRadius="8" Padding="8">
+                                <TextBlock Text="👥" FontSize="16" Foreground="White"/>
+                            </Border>
+                            <StackPanel>
+                                <TextBlock Text="用户列表" FontSize="18" FontWeight="SemiBold" Foreground="#1f2937"/>
+                                <TextBlock Text="{Binding Users.Count, StringFormat='共 {0} 条记录'}" FontSize="14" Foreground="#6b7280"/>
                             </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-            </DataGrid>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                            <Button Command="{Binding SelectAllCommand}" 
+                                    Background="#f3f4f6" 
+                                    Foreground="#374151" 
+                                    Padding="12,8"
+                                    CornerRadius="6"
+                                    FontSize="12"
+                                    FontWeight="Medium">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="☑️" FontSize="12"/>
+                                    <TextBlock Text="全选"/>
+                                </StackPanel>
+                            </Button>
+                            
+                            <Button Command="{Binding ClearSelectionCommand}" 
+                                    Background="#f3f4f6" 
+                                    Foreground="#374151" 
+                                    Padding="12,8"
+                                    CornerRadius="6"
+                                    FontSize="12"
+                                    FontWeight="Medium">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="☐" FontSize="12"/>
+                                    <TextBlock Text="清空"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                
+                <!-- 数据表格 -->
+                <ScrollViewer Grid.Row="1" 
+                              HorizontalScrollBarVisibility="Auto" 
+                              VerticalScrollBarVisibility="Auto">
+                    <DataGrid ItemsSource="{Binding Users}" 
+                              IsReadOnly="True" 
+                              AutoGenerateColumns="False"
+                              GridLinesVisibility="None"
+                              HeadersVisibility="Column"
+                              Background="White"
+                              BorderThickness="0"
+                              RowBackground="White"
+                              FontSize="14"
+                              Padding="0"
+                              CanUserReorderColumns="True"
+                              CanUserResizeColumns="True"
+                              CanUserSortColumns="True"
+                              SelectionMode="Extended"
+                          
+                              ColumnHeaderHeight="50"
+                              RowHeight="60">
+                    
+            
+                    <DataGrid.Columns>
+                        <DataGridCheckBoxColumn Header="选择" 
+                                                Binding="{Binding IsSelected}" 
+                                                Width="120"
+                                                CanUserSort="False"/>
+                        
+                        <DataGridTextColumn Header="👤 用户名" 
+                                            Binding="{Binding Name}" 
+                                            Width="120"
+                                            FontWeight="SemiBold"/>
+                        
+                        <DataGridTextColumn Header="📝 真实姓名" 
+                                            Binding="{Binding RealName}" 
+                                            Width="120"/>
+                        
+                        <DataGridTextColumn Header="📧 邮箱" 
+                                            Binding="{Binding Email}" 
+                                            Width="200"/>
+                        
+                        <DataGridTextColumn Header="📱 手机号" 
+                                            Binding="{Binding Phone}" 
+                                            Width="120"/>
+                        
+                        <DataGridTemplateColumn Header="状态" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="12" 
+                                            Padding="8,4" 
+                                            HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"
+                                            Background="{Binding Status, Converter={StaticResource StatusToBackgroundConverter}}">
+                                        <StackPanel Orientation="Horizontal" 
+                                                   Spacing="4" 
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Status, Converter={StaticResource StatusToIconConverter}}" 
+                                                       FontSize="12"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        
+                        <DataGridTextColumn Header="🏢 组织架构" 
+                                            Binding="{Binding OrganizationUnitName}" 
+                                            Width="140"/>
+                        
+                        <DataGridTextColumn Header="📅 创建时间" 
+                                            Binding="{Binding CreatedAt, StringFormat='yyyy-MM-dd HH:mm'}" 
+                                            Width="140"/>
+                        
+                        <DataGridTemplateColumn Header="⚙️ 操作"  CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                        <Button Command="{Binding $parent[DataGrid].DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding $parent[DataGrid].DataContext.CanEditUser, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Background="#3b82f6" 
+                                                Foreground="White" 
+                                                Padding="12,8" 
+                                                FontSize="12"
+                                                FontWeight="SemiBold"
+                                                CornerRadius="8"
+                                                MinWidth="60">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="✏️" FontSize="12"/>
+                                                <TextBlock Text="编辑"/>
+                                            </StackPanel>
+                                        </Button>
+                                        
+                                        <Button Command="{Binding $parent[DataGrid].DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding $parent[DataGrid].DataContext.CanDeleteUser, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Background="#ef4444" 
+                                                Foreground="White" 
+                                                Padding="12,8" 
+                                                FontSize="12"
+                                                FontWeight="SemiBold"
+                                                CornerRadius="8"
+                                                MinWidth="60">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="🗑️" FontSize="12"/>
+                                                <TextBlock Text="删除"/>
+                                            </StackPanel>
+                                        </Button>
+                                        
+                                        <Button Command="{Binding $parent[DataGrid].DataContext.ResetPasswordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding $parent[DataGrid].DataContext.CanResetPassword, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Background="#f59e0b" 
+                                                Foreground="White" 
+                                                Padding="12,8" 
+                                                FontSize="12"
+                                                FontWeight="SemiBold"
+                                                CornerRadius="8"
+                                                MinWidth="60">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="🔑" FontSize="12"/>
+                                                <TextBlock Text="重置"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                    </DataGrid>
+                </ScrollViewer>
+            </Grid>
         </Border>
 
         <!-- 现代化加载指示器 -->
         <Border Grid.Row="2" 
                 Background="#80000000" 
                 IsVisible="{Binding IsLoading}"
-                CornerRadius="12">
-            <StackPanel HorizontalAlignment="Center" 
-                        VerticalAlignment="Center"
-                        Spacing="15">
-                <TextBlock Text="⏳" 
-                           FontSize="24" 
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="正在加载用户数据..." 
-                           FontSize="16" 
-                           FontWeight="Medium"
-                           Foreground="White" 
-                           HorizontalAlignment="Center"/>
-            </StackPanel>
+                CornerRadius="16">
+            <Border Background="White" 
+                    CornerRadius="16" 
+                    Padding="40,30"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    BoxShadow="0 20 40 0 #1A000000">
+                <StackPanel HorizontalAlignment="Center" 
+                            VerticalAlignment="Center"
+                            Spacing="20">
+                    <!-- 旋转加载动画 -->
+                    <Border Background="#667eea" 
+                            CornerRadius="50" 
+                            Width="60" 
+                            Height="60"
+                            HorizontalAlignment="Center">
+                        <TextBlock Text="⏳" 
+                                   FontSize="24" 
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="正在加载用户数据..." 
+                                   FontSize="18" 
+                                   FontWeight="SemiBold"
+                                   Foreground="#1f2937" 
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="请稍候..." 
+                                   FontSize="14" 
+                                   Foreground="#6b7280"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </Border>
     </Grid>
 

@@ -47,6 +47,8 @@ namespace Ncp.CleanDDD.Avalonia.ViewModels
             BatchResetPasswordCommand = ReactiveCommand.CreateFromTask(BatchResetPasswordAsync);
             RefreshCommand = ReactiveCommand.CreateFromTask(LoadUsersAsync);
             PageChangedCommand = ReactiveCommand.Create<int>(OnPageChanged);
+            SelectAllCommand = ReactiveCommand.Create(SelectAll);
+            ClearSelectionCommand = ReactiveCommand.Create(ClearSelection);
 
             // 自动加载数据
             LoadUsersCommand.Execute(null);
@@ -123,6 +125,8 @@ namespace Ncp.CleanDDD.Avalonia.ViewModels
         public ICommand BatchResetPasswordCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand PageChangedCommand { get; }
+        public ICommand SelectAllCommand { get; }
+        public ICommand ClearSelectionCommand { get; }
 
         // 权限检查
         public bool CanCreateUser => _authService.HasPermission("UserCreate");
@@ -260,6 +264,22 @@ namespace Ncp.CleanDDD.Avalonia.ViewModels
         {
             CurrentPage = page;
             LoadUsersCommand.Execute(null);
+        }
+
+        private void SelectAll()
+        {
+            foreach (var user in Users)
+            {
+                user.IsSelected = true;
+            }
+        }
+
+        private void ClearSelection()
+        {
+            foreach (var user in Users)
+            {
+                user.IsSelected = false;
+            }
         }
     }
 }
