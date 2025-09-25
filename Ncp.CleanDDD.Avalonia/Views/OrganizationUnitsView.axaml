@@ -1,0 +1,191 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Ncp.CleanDDD.Avalonia.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Ncp.CleanDDD.Avalonia.Views.OrganizationUnitsView"
+             x:DataType="vm:OrganizationUnitsViewModel">
+
+    <Design.DataContext>
+        <vm:OrganizationUnitsViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 左侧：组织架构树 -->
+        <Border Grid.Column="0" Background="White" Margin="0,0,5,0" CornerRadius="5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 树形结构标题 -->
+                <Border Grid.Row="0" Background="#e67e22" Padding="15,10">
+                    <TextBlock Text="组织架构树" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Foreground="White"/>
+                </Border>
+
+                <!-- 树形结构 -->
+                <TreeView Grid.Row="1" 
+                          ItemsSource="{Binding OrganizationTree}" 
+                          Padding="10">
+                    <TreeView.ItemTemplate>
+                        <TreeDataTemplate ItemsSource="{Binding Children}">
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="📁" FontSize="14"/>
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding IsActive}" 
+                                           Foreground="Gray" 
+                                           FontSize="12"/>
+                            </StackPanel>
+                        </TreeDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+            </Grid>
+        </Border>
+
+        <!-- 右侧：组织架构列表 -->
+        <Border Grid.Column="1" Background="White" Margin="5,0,0,0" CornerRadius="5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 页面标题 -->
+                <Border Grid.Row="0" Background="#e67e22" Padding="20,15">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="组织架构管理" 
+                                   FontSize="24" 
+                                   FontWeight="Bold" 
+                                   Foreground="White"/>
+                        <TextBlock Text="{Binding OrganizationUnits.Count, StringFormat='共 {0} 个组织'}" 
+                                   FontSize="14" 
+                                   Foreground="White" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 搜索和操作栏 -->
+                <Border Grid.Row="1" Background="#ecf0f1" Padding="15" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- 搜索区域 -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                            <TextBox Text="{Binding SearchName}" 
+                                     Watermark="搜索组织名称" 
+                                     Width="200" 
+                                     Padding="10,8"/>
+                            
+                            <Button Content="搜索" 
+                                    Command="{Binding SearchCommand}" 
+                                    Background="#27ae60" 
+                                    Foreground="White" 
+                                    Padding="15,8"/>
+                            
+                            <Button Content="刷新" 
+                                    Command="{Binding RefreshCommand}" 
+                                    Background="#95a5a6" 
+                                    Foreground="White" 
+                                    Padding="15,8"/>
+                        </StackPanel>
+                        
+                        <!-- 操作按钮 -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                            <Button Content="新建组织" 
+                                    Command="{Binding CreateOrganizationUnitCommand}" 
+                                    IsEnabled="{Binding CanCreateOrganizationUnit}"
+                                    Background="#e74c3c" 
+                                    Foreground="White" 
+                                    Padding="15,8"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 组织架构列表 -->
+                <DataGrid Grid.Row="2" 
+                          ItemsSource="{Binding OrganizationUnits}" 
+                          IsReadOnly="True" 
+                          AutoGenerateColumns="False"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column">
+                    
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="名称" 
+                                            Binding="{Binding Name}" 
+                                            Width="150"/>
+                        
+                        <DataGridTextColumn Header="描述" 
+                                            Binding="{Binding Description}" 
+                                            Width="200"/>
+                        
+                        <DataGridTextColumn Header="排序" 
+                                            Binding="{Binding SortOrder}" 
+                                            Width="80"/>
+                        
+                        <DataGridTextColumn Header="状态" 
+                                            Binding="{Binding IsActive}" 
+                                            Width="80"/>
+                        
+                        <DataGridTextColumn Header="创建时间" 
+                                            Binding="{Binding CreatedAt, StringFormat='yyyy-MM-dd HH:mm'}" 
+                                            Width="150"/>
+                        
+                        <DataGridTemplateColumn Header="操作" Width="150">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                        <Button Content="编辑" 
+                                                Command="{Binding $parent[DataGrid].DataContext.EditOrganizationUnitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding $parent[DataGrid].DataContext.CanEditOrganizationUnit, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Background="#3498db" 
+                                                Foreground="White" 
+                                                Padding="8,4" 
+                                                FontSize="12"/>
+                                        
+                                        <Button Content="删除" 
+                                                Command="{Binding $parent[DataGrid].DataContext.DeleteOrganizationUnitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                CommandParameter="{Binding}"
+                                                IsEnabled="{Binding $parent[DataGrid].DataContext.CanDeleteOrganizationUnit, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Background="#e74c3c" 
+                                                Foreground="White" 
+                                                Padding="8,4" 
+                                                FontSize="12"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- 加载指示器 -->
+                <Border Grid.Row="2" 
+                        Background="#80000000" 
+                        IsVisible="{Binding IsLoading}">
+                    <StackPanel HorizontalAlignment="Center" 
+                                VerticalAlignment="Center">
+                        <TextBlock Text="加载中..." 
+                                   FontSize="16" 
+                                   Foreground="White" 
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+
+</UserControl>

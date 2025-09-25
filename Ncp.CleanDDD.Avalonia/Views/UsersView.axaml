@@ -1,0 +1,182 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Ncp.CleanDDD.Avalonia.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Ncp.CleanDDD.Avalonia.Views.UsersView"
+             x:DataType="vm:UsersViewModel">
+
+    <Design.DataContext>
+        <vm:UsersViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 页面标题 -->
+        <Border Grid.Row="0" Background="#3498db" Padding="20,15" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="用户管理" 
+                           FontSize="24" 
+                           FontWeight="Bold" 
+                           Foreground="White"/>
+                <TextBlock Text="{Binding TotalCount, StringFormat='共 {0} 个用户'}" 
+                           FontSize="14" 
+                           Foreground="White" 
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 搜索和操作栏 -->
+        <Border Grid.Row="1" Background="#ecf0f1" Padding="15" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- 搜索区域 -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                    <TextBox Text="{Binding SearchKeyword}" 
+                             Watermark="搜索用户名或邮箱" 
+                             Width="200" 
+                             Padding="10,8"/>
+                    
+                    <ComboBox SelectedItem="{Binding StatusFilter}" 
+                              Width="120" 
+                              Padding="10,8">
+                        <ComboBoxItem Content="全部状态" Tag="{x:Null}"/>
+                        <ComboBoxItem Content="启用" Tag="1"/>
+                        <ComboBoxItem Content="禁用" Tag="0"/>
+                    </ComboBox>
+                    
+                    <Button Content="搜索" 
+                            Command="{Binding SearchCommand}" 
+                            Background="#27ae60" 
+                            Foreground="White" 
+                            Padding="15,8"/>
+                    
+                    <Button Content="刷新" 
+                            Command="{Binding RefreshCommand}" 
+                            Background="#95a5a6" 
+                            Foreground="White" 
+                            Padding="15,8"/>
+                </StackPanel>
+                
+                <!-- 操作按钮 -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Content="新建用户" 
+                            Command="{Binding CreateUserCommand}" 
+                            IsEnabled="{Binding CanCreateUser}"
+                            Background="#e74c3c" 
+                            Foreground="White" 
+                            Padding="15,8"/>
+                    
+                    <Button Content="批量删除" 
+                            Command="{Binding BatchDeleteCommand}" 
+                            IsEnabled="{Binding CanDeleteUser}"
+                            Background="#c0392b" 
+                            Foreground="White" 
+                            Padding="15,8"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 用户列表 -->
+        <DataGrid Grid.Row="2" 
+                  ItemsSource="{Binding Users}" 
+                  IsReadOnly="True" 
+                  AutoGenerateColumns="False"
+                  GridLinesVisibility="Horizontal"
+                  HeadersVisibility="Column">
+            
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="选择" 
+                                        Binding="{Binding IsSelected}" 
+                                        Width="60"/>
+                
+                <DataGridTextColumn Header="用户名" 
+                                    Binding="{Binding Name}" 
+                                    Width="120"/>
+                
+                <DataGridTextColumn Header="真实姓名" 
+                                    Binding="{Binding RealName}" 
+                                    Width="120"/>
+                
+                <DataGridTextColumn Header="邮箱" 
+                                    Binding="{Binding Email}" 
+                                    Width="200"/>
+                
+                <DataGridTextColumn Header="手机号" 
+                                    Binding="{Binding Phone}" 
+                                    Width="120"/>
+                
+                <DataGridTextColumn Header="状态" 
+                                    Binding="{Binding Status}" 
+                                    Width="80"/>
+                
+                <DataGridTextColumn Header="组织架构" 
+                                    Binding="{Binding OrganizationUnitName}" 
+                                    Width="150"/>
+                
+                <DataGridTextColumn Header="创建时间" 
+                                    Binding="{Binding CreatedAt, StringFormat='yyyy-MM-dd HH:mm'}" 
+                                    Width="150"/>
+                
+                <DataGridTemplateColumn Header="操作" Width="200">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <Button Content="编辑" 
+                                        Command="{Binding $parent[DataGrid].DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding $parent[DataGrid].DataContext.CanEditUser, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Background="#3498db" 
+                                        Foreground="White" 
+                                        Padding="8,4" 
+                                        FontSize="12"/>
+                                
+                                <Button Content="删除" 
+                                        Command="{Binding $parent[DataGrid].DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding $parent[DataGrid].DataContext.CanDeleteUser, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Background="#e74c3c" 
+                                        Foreground="White" 
+                                        Padding="8,4" 
+                                        FontSize="12"/>
+                                
+                                <Button Content="重置密码" 
+                                        Command="{Binding $parent[DataGrid].DataContext.ResetPasswordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding $parent[DataGrid].DataContext.CanResetPassword, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Background="#f39c12" 
+                                        Foreground="White" 
+                                        Padding="8,4" 
+                                        FontSize="12"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- 加载指示器 -->
+        <Border Grid.Row="2" 
+                Background="#80000000" 
+                IsVisible="{Binding IsLoading}">
+            <StackPanel HorizontalAlignment="Center" 
+                        VerticalAlignment="Center">
+                <TextBlock Text="加载中..." 
+                           FontSize="16" 
+                           Foreground="White" 
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+
+</UserControl>

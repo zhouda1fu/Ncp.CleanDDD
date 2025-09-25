@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ncp.CleanDDD.Web.Tests", "t
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D8FA34CE-25DA-4E6F-AD50-1EAD1F33F9F1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ncp.CleanDDD.Avalonia", "Ncp.CleanDDD.Avalonia\Ncp.CleanDDD.Avalonia.csproj", "{6BCAF35B-4FE2-4636-B2E1-A364685FF646}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,10 @@ Global
 		{64AD4028-B7DA-4858-964D-26977C1A5EA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{64AD4028-B7DA-4858-964D-26977C1A5EA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{64AD4028-B7DA-4858-964D-26977C1A5EA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BCAF35B-4FE2-4636-B2E1-A364685FF646}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BCAF35B-4FE2-4636-B2E1-A364685FF646}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BCAF35B-4FE2-4636-B2E1-A364685FF646}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BCAF35B-4FE2-4636-B2E1-A364685FF646}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -70,6 +76,7 @@ Global
 		{7D7959A4-5875-44E3-81FB-B4C6E5FE59DA} = {5C6B3693-7A37-4ABF-A217-8EDA0B51F742}
 		{0AB6D561-D07F-4833-BB91-D87EFC8485C4} = {5C6B3693-7A37-4ABF-A217-8EDA0B51F742}
 		{64AD4028-B7DA-4858-964D-26977C1A5EA9} = {5C6B3693-7A37-4ABF-A217-8EDA0B51F742}
+		{6BCAF35B-4FE2-4636-B2E1-A364685FF646} = {D8FA34CE-25DA-4E6F-AD50-1EAD1F33F9F1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E6FD5C45-63B8-458D-8CFA-7ACFD729624C}

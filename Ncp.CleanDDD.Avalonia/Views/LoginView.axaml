@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Ncp.CleanDDD.Avalonia.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="300"
+             x:Class="Ncp.CleanDDD.Avalonia.Views.LoginView"
+             x:DataType="vm:LoginViewModel">
+
+    <Design.DataContext>
+        <vm:LoginViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Border Background="White" 
+                CornerRadius="10" 
+                Padding="40" 
+                BoxShadow="0 4 8 0 #33000000">
+            <StackPanel Spacing="20" MinWidth="300">
+                <!-- 标题 -->
+                <TextBlock Text="系统登录" 
+                           FontSize="24" 
+                           FontWeight="Bold" 
+                           HorizontalAlignment="Center" 
+                           Foreground="#2c3e50"/>
+                
+                <!-- 用户名输入 -->
+                <StackPanel>
+                    <TextBlock Text="用户名" 
+                               FontWeight="SemiBold" 
+                               Foreground="#34495e"/>
+                    <TextBox Text="{Binding Username}" 
+                             Watermark="请输入用户名" 
+                             Padding="10" 
+                             FontSize="14"/>
+                </StackPanel>
+                
+                <!-- 密码输入 -->
+                <StackPanel>
+                    <TextBlock Text="密码" 
+                               FontWeight="SemiBold" 
+                               Foreground="#34495e"/>
+                    <TextBox Text="{Binding Password}" 
+                             PasswordChar="*" 
+                             Watermark="请输入密码" 
+                             Padding="10" 
+                             FontSize="14"/>
+                </StackPanel>
+                
+                <!-- 错误信息 -->
+                <TextBlock Text="{Binding ErrorMessage}" 
+                           Foreground="Red" 
+                           HorizontalAlignment="Center"/>
+                
+                <!-- 登录按钮 -->
+                <Button Content="登录" 
+                        Command="{Binding LoginCommand}" 
+                        IsEnabled="{Binding !IsLoading}"
+                        Background="#3498db" 
+                        Foreground="White" 
+                        FontSize="16" 
+                        FontWeight="Bold" 
+                        Padding="20,10" 
+                        HorizontalAlignment="Stretch"/>
+                
+                <!-- 加载指示器 -->
+                <StackPanel Orientation="Horizontal" 
+                            HorizontalAlignment="Center" 
+                            IsVisible="{Binding IsLoading}">
+                    <TextBlock Text="登录中..." 
+                               Foreground="#7f8c8d" 
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+
+</UserControl>

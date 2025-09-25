@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Ncp.CleanDDD.Avalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="Ncp.CleanDDD.Avalonia.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Ncp.CleanDDD 管理系统"
+        Width="1200" Height="800"
+        MinWidth="800" MinHeight="600">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 顶部导航栏 -->
+        <Border Grid.Row="0" Background="#2c3e50" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="20">
+                    <TextBlock Text="Ncp.CleanDDD 管理系统" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               VerticalAlignment="Center"/>
+                    
+                    <Button Content="用户管理" 
+                            Command="{Binding NavigateToUsersCommand}"
+                            IsVisible="{Binding IsLoggedIn}"
+                            Background="#3498db" 
+                            Foreground="White" 
+                            Padding="10,5"/>
+                    
+                    <Button Content="角色管理" 
+                            Command="{Binding NavigateToRolesCommand}"
+                            IsVisible="{Binding IsLoggedIn}"
+                            Background="#9b59b6" 
+                            Foreground="White" 
+                            Padding="10,5"/>
+                    
+                    <Button Content="组织架构" 
+                            Command="{Binding NavigateToOrganizationUnitsCommand}"
+                            IsVisible="{Binding IsLoggedIn}"
+                            Background="#e67e22" 
+                            Foreground="White" 
+                            Padding="10,5"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Content="登出" 
+                            Command="{Binding LogoutCommand}"
+                            IsVisible="{Binding IsLoggedIn}"
+                            Background="#e74c3c" 
+                            Foreground="White" 
+                            Padding="10,5"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 主内容区域 -->
+        <ContentControl Grid.Row="1" Margin="10" Name="MainContent">
+            <ContentControl.Content>
+                <TextBlock Text="请选择页面" 
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center" 
+                           FontSize="16" 
+                           Foreground="Gray"/>
+            </ContentControl.Content>
+        </ContentControl>
+    </Grid>
+
+</Window>
