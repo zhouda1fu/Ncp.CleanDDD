@@ -8,7 +8,7 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="Ncp.CleanDDD 管理系统"
-        Width="1200" Height="800"
+        WindowState="Maximized"
         MinWidth="800" MinHeight="600">
 
     <Design.DataContext>

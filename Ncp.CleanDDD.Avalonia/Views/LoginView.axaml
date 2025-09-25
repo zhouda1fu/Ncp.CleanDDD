@@ -3,7 +3,7 @@
              xmlns:vm="using:Ncp.CleanDDD.Avalonia.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="300"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
              x:Class="Ncp.CleanDDD.Avalonia.Views.LoginView"
              x:DataType="vm:LoginViewModel">
 
@@ -11,65 +11,166 @@
         <vm:LoginViewModel/>
     </Design.DataContext>
 
-    <Grid>
-        <Border Background="White" 
-                CornerRadius="10" 
-                Padding="40" 
-                BoxShadow="0 4 8 0 #33000000">
-            <StackPanel Spacing="20" MinWidth="300">
-                <!-- 标题 -->
-                <TextBlock Text="系统登录" 
-                           FontSize="24" 
-                           FontWeight="Bold" 
-                           HorizontalAlignment="Center" 
-                           Foreground="#2c3e50"/>
-                
-                <!-- 用户名输入 -->
-                <StackPanel>
-                    <TextBlock Text="用户名" 
+    <Grid Background="#fafbfc">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- 现代化背景装饰 -->
+        <Rectangle Grid.RowSpan="3" Grid.ColumnSpan="3"
+                   Fill="#667eea" 
+                   Opacity="0.05" 
+                   HorizontalAlignment="Stretch" 
+                   VerticalAlignment="Stretch"/>
+        <Rectangle Grid.RowSpan="3" Grid.ColumnSpan="3"
+                   Fill="#764ba2" 
+                   Opacity="0.03" 
+                   HorizontalAlignment="Stretch" 
+                   VerticalAlignment="Stretch" 
+                   Margin="200,100,200,100"/>
+        <Rectangle Grid.RowSpan="3" Grid.ColumnSpan="3"
+                   Fill="#f093fb" 
+                   Opacity="0.02" 
+                   HorizontalAlignment="Stretch" 
+                   VerticalAlignment="Stretch" 
+                   Margin="400,200,400,200"/>
+
+        <!-- 现代化登录面板 -->
+        <Border Grid.Row="1" Grid.Column="1" 
+                Background="White" 
+                BorderBrush="#e1e8ed" 
+                BorderThickness="1"
+                Padding="60,50" 
+                MinWidth="480"
+                MaxWidth="520"
+                CornerRadius="16"
+                BoxShadow="0 20 60 0 #0D000000">
+            <StackPanel Spacing="25">
+                <!-- 现代化标题区域 -->
+                <StackPanel HorizontalAlignment="Center" Spacing="16">
+                    <!-- 应用图标 -->
+                    <Border Background="#667eea" 
+                            CornerRadius="20" 
+                            Padding="16" 
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,8">
+                        <Image Source="/Assets/avalonia-logo.ico" 
+                               Width="48" 
+                               Height="48" 
+                               HorizontalAlignment="Center"/>
+                    </Border>
+                    
+                    <TextBlock Text="Ncp.CleanDDD" 
+                               FontSize="32" 
                                FontWeight="SemiBold" 
-                               Foreground="#34495e"/>
-                    <TextBox Text="{Binding Username}" 
-                             Watermark="请输入用户名" 
-                             Padding="10" 
-                             FontSize="14"/>
+                               Foreground="#1a202c"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="现代化管理系统" 
+                               FontSize="16" 
+                               Foreground="#718096"
+                               HorizontalAlignment="Center"/>
                 </StackPanel>
                 
-                <!-- 密码输入 -->
-                <StackPanel>
-                    <TextBlock Text="密码" 
-                               FontWeight="SemiBold" 
-                               Foreground="#34495e"/>
-                    <TextBox Text="{Binding Password}" 
-                             PasswordChar="*" 
-                             Watermark="请输入密码" 
-                             Padding="10" 
-                             FontSize="14"/>
-                </StackPanel>
-                
-                <!-- 错误信息 -->
-                <TextBlock Text="{Binding ErrorMessage}" 
-                           Foreground="Red" 
-                           HorizontalAlignment="Center"/>
-                
-                <!-- 登录按钮 -->
-                <Button Content="登录" 
-                        Command="{Binding LoginCommand}" 
-                        IsEnabled="{Binding !IsLoading}"
-                        Background="#3498db" 
-                        Foreground="White" 
-                        FontSize="16" 
-                        FontWeight="Bold" 
-                        Padding="20,10" 
-                        HorizontalAlignment="Stretch"/>
-                
-                <!-- 加载指示器 -->
-                <StackPanel Orientation="Horizontal" 
-                            HorizontalAlignment="Center" 
-                            IsVisible="{Binding IsLoading}">
-                    <TextBlock Text="登录中..." 
-                               Foreground="#7f8c8d" 
-                               VerticalAlignment="Center"/>
+                <!-- 登录表单 -->
+                <StackPanel Spacing="20">
+                    <!-- 现代化用户名输入 -->
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="👤" 
+                                       FontSize="18" 
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="用户名" 
+                                       FontSize="15" 
+                                       FontWeight="SemiBold" 
+                                       Foreground="#2d3748"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBox Text="{Binding Username}" 
+                                 Watermark="请输入用户名" 
+                                 Padding="16,14" 
+                                 FontSize="15"
+                                 BorderBrush="#e2e8f0"
+                                 BorderThickness="2"
+                                 CornerRadius="8"
+                                 Background="#f7fafc"/>
+                    </StackPanel>
+                    
+                    <!-- 现代化密码输入 -->
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="🔒" 
+                                       FontSize="18" 
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="密码" 
+                                       FontSize="15" 
+                                       FontWeight="SemiBold" 
+                                       Foreground="#2d3748"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBox Text="{Binding Password}" 
+                                 PasswordChar="*" 
+                                 Watermark="请输入密码" 
+                                 Padding="16,14" 
+                                 FontSize="15"
+                                 BorderBrush="#e2e8f0"
+                                 BorderThickness="2"
+                                 CornerRadius="8"
+                                 Background="#f7fafc"/>
+                    </StackPanel>
+                    
+                    <!-- 现代化错误信息 -->
+                    <TextBlock Text="{Binding ErrorMessage}" 
+                               Foreground="#e53e3e" 
+                               FontSize="14"
+                               FontWeight="Medium"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Padding="16,8"/>
+                    
+                    <!-- 现代化登录按钮 -->
+                    <Button Command="{Binding LoginCommand}" 
+                            IsEnabled="{Binding !IsLoading}"
+                            Background="#667eea" 
+                            Foreground="White" 
+                            FontSize="16" 
+                            FontWeight="SemiBold" 
+                            Padding="0,16" 
+                            HorizontalAlignment="Stretch"
+                            CornerRadius="10"
+                            Margin="0,20,0,0">
+                        <StackPanel Orientation="Horizontal" 
+                                    HorizontalAlignment="Center" 
+                                    Spacing="10">
+                            <TextBlock Text="🚀" 
+                                       FontSize="18" 
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="立即登录" 
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <!-- 现代化加载指示器 -->
+                    <StackPanel Orientation="Horizontal" 
+                                HorizontalAlignment="Center" 
+                                IsVisible="{Binding IsLoading}"
+                                Spacing="12"
+                                Margin="0,16,0,0">
+                        <TextBlock Text="⏳" 
+                                   FontSize="20" 
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="正在登录中..." 
+                                   Foreground="#718096" 
+                                   FontSize="15"
+                                   FontWeight="Medium"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
                 </StackPanel>
             </StackPanel>
         </Border>
